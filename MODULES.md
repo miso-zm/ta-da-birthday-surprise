@@ -1,6 +1,6 @@
 # Ta-da! 模块边界与公共契约
 
-**状态：** Working 0.4（Gate A、Gate B 已通过，模块交互契约已冻结）
+**状态：** Working 0.5（Gate C 公共代码底座已冻结）
 
 ## 目录与所有权
 
@@ -18,6 +18,8 @@ src/
 ├── features/gift/            # 40 Gift Reveal 与 Share
 ├── features/share/
 ├── lib/surprise-contract.ts  # 总控：公共数据与模块类型
+├── lib/sender-preview.ts     # 总控：草稿校验与 Preview 转换
+├── lib/sender-draft-storage.ts # 总控：浏览器草稿读写与恢复
 ├── content/demo-surprise.ts  # 总控：本地演示数据
 └── styles/tokens.css         # 总控：设计令牌
 ```
@@ -41,6 +43,8 @@ src/
 | `share` | 分享标题和分享文案 |
 
 三种 `unlock` 配置使用可辨识联合类型：`rps`、`find-gift`、`birthday-password`。模块不得通过可选字段组合猜测游戏类型。
+
+代码层已冻结三个藏匿点标识：`cabinet-gift`、`sofa-gift`、`plant-gift`。`SenderDraft` 使用版本化本地草稿结构；`SurprisePreview` 不含公开 `slug`，避免本地预览伪装成已发布内容。模块任务只消费这些类型，不得复制或重定义。
 
 ## 模块接口
 

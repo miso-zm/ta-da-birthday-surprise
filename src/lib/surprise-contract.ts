@@ -12,10 +12,18 @@ export type RockPaperScissorsConfig = {
   kind: "rps";
 };
 
+export const FIND_GIFT_TARGET_IDS = [
+  "cabinet-gift",
+  "sofa-gift",
+  "plant-gift",
+] as const;
+
+export type FindGiftTargetId = (typeof FIND_GIFT_TARGET_IDS)[number];
+
 export type FindGiftConfig = {
   kind: "find-gift";
   sceneId: string;
-  targetId: string;
+  targetId: FindGiftTargetId;
 };
 
 export type BirthdayPasswordConfig = {
@@ -65,9 +73,7 @@ export type ShareContent = {
 
 export type ShareResult = "shared" | "copied" | "cancelled" | "failed";
 
-export type Surprise = {
-  id: string;
-  slug: string;
+export type SurpriseContent = {
   recipient: Person;
   sender: Person;
   birthday: string;
@@ -78,6 +84,76 @@ export type Surprise = {
   gift: GiftContent;
   share: ShareContent;
 };
+
+export type Surprise = SurpriseContent & {
+  id: string;
+  slug: string;
+};
+
+export type SurprisePreview = SurpriseContent & {
+  mode: "preview";
+  draftId: string;
+};
+
+export type SenderStep =
+  | "basics"
+  | "unlock"
+  | "card"
+  | "scrapbook"
+  | "gift"
+  | "publish";
+
+export const SENDER_STEPS: SenderStep[] = [
+  "basics",
+  "unlock",
+  "card",
+  "scrapbook",
+  "gift",
+  "publish",
+];
+
+export type SenderUnlockDraft =
+  | RockPaperScissorsConfig
+  | {
+      kind: "find-gift";
+      targetId: FindGiftTargetId;
+    }
+  | {
+      kind: "birthday-password";
+    };
+
+export type SenderDraft = {
+  version: 1;
+  draftId: string;
+  updatedAt: string;
+  basics: {
+    recipientName: string;
+    senderName: string;
+    birthday: string;
+    openingTemplateId: string;
+    openingTitle: string;
+    openingPrompt: string;
+  };
+  unlock: SenderUnlockDraft;
+  card: CardContent;
+  scrapbook: ScrapbookContent;
+  gift: GiftContent;
+};
+
+export type SenderValidationErrors = Partial<
+  Record<SenderStep, string[]>
+>;
+
+export type SenderPreviewResult =
+  | {
+      ok: true;
+      preview: SurprisePreview;
+    }
+  | {
+      ok: false;
+      errors: SenderValidationErrors;
+      firstIncompleteStep: SenderStep;
+    };
 
 export type ReceiverStep =
   | "opening"

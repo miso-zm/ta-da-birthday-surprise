@@ -6,6 +6,8 @@ Receiver 空壳主链路已作为结构基线保留，当前不处理不影响�
 
 Gate C 先由总控冻结代码层公共契约和任务卡，再由用户明确授权创建编码任务与 Worktree。此阶段只实现本地 Sender → Preview → Receiver 闭环、小游戏和 Memory 结构，不制作最终插画或正式动效，不接入 Supabase。
 
+用户不承担代码、类型或构建审核。冻结契约内的技术实现由总控直接推进并自检；只有可见 UI、真实操作流程、文案含义、Tada 形象与动效感受交给用户审核。
+
 ## 开始任何任务前
 
 1. 首先阅读 `STATUS.md` 和 `DECISIONS.md`，再完整阅读本文件以及 `PROJECT.md`、`FLOW.md`、`MODULES.md`、`DESIGN.md`。
