@@ -43,7 +43,10 @@ Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验
 
 ## 当前进行中
 
-- `00 总控与集成`：公共代码底座已完成，准备三路模块任务卡与隔离 Worktree。
+- `00 总控与集成`：公共代码底座已完成，正在监督三路隔离实现并准备逐项验收。
+- `15 Sender 六步与 Preview`：在 `codex/gate-c-sender` Worktree 实现移动端六步创建模块。
+- `20 Unlock Games`：在 `codex/gate-c-unlock` Worktree 实现三个轻量小游戏。
+- `30 Birthday Card 与 Scrapbook`：在 `codex/gate-c-memory` Worktree 实现 2+2 个静态模板方向。
 
 ## Gate C 目标
 
@@ -53,7 +56,11 @@ Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验
 
 ## 活动编码任务
 
-无。公共契约已就绪，下一批为 Sender、Unlock、Memory 三路模块实现。
+三路同时进行，目录互不重叠：
+
+- `src/features/sender/**`
+- `src/features/unlock/**`
+- `src/features/memory/**`
 
 ## Gate C 计划并行任务
 
@@ -71,4 +78,4 @@ Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验
 
 ## 下一步唯一行动
 
-总控按冻结接口创建 Sender、Unlock、Memory 三张任务卡和隔离 Worktree；各模块先完成静态可操作版本，再由总控逐个集成。
+等待三路返回静态可操作版本；总控先做契约与技术审查，再逐个集成，最后只把可见 UI 和完整流程交给用户验收。
