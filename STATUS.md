@@ -6,7 +6,7 @@
 
 ## 一句话状态
 
-Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验、浏览器草稿读写和不含假 slug 的 Receiver Preview 数据接口均已冻结。下一步可以启动 Sender、Unlock、Memory 三路模块实现。
+Gate C 三路模块已经完成并集成：Sender 六步、三种 Unlock Game、2+2 个 Card / Scrapbook 模板，以及不生成假链接的 Receiver Preview 已形成可验收本地闭环。
 
 ## 已审核决定
 
@@ -40,13 +40,13 @@ Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验
 - Gate B 三路静态方案已统一审核通过，并记录为 D-008 至 D-011。
 - Gate C 公共代码底座已完成：`SenderDraft`、本地存储、Preview 转换和 `/create` 接入位置。
 - 技术审核与用户体验审核的分工已记录为 D-012。
+- Gate C 三路 Worktree 已完成交叉审查并顺序集成到主分支。
+- `/create` 已接通 Sender 六步 → Receiver 全流程 Preview → 返回继续编辑。
+- 生产构建通过；Unlock 纯逻辑测试 4/4 通过；375×812 首屏无控制台错误。
 
 ## 当前进行中
 
-- `00 总控与集成`：公共代码底座已完成，正在监督三路隔离实现并准备逐项验收。
-- `15 Sender 六步与 Preview`：在 `codex/gate-c-sender` Worktree 实现移动端六步创建模块。
-- `20 Unlock Games`：在 `codex/gate-c-unlock` Worktree 实现三个轻量小游戏。
-- `30 Birthday Card 与 Scrapbook`：在 `codex/gate-c-memory` Worktree 实现 2+2 个静态模板方向。
+- `00 总控与集成`：Gate C 技术集成已完成，等待用户按 UI 和流程验收。
 
 ## Gate C 目标
 
@@ -56,11 +56,7 @@ Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验
 
 ## 活动编码任务
 
-三路同时进行，目录互不重叠：
-
-- `src/features/sender/**`
-- `src/features/unlock/**`
-- `src/features/memory/**`
+当前没有并行编码任务。三个 Gate C Worktree 已返回结果并完成集成。
 
 ## Gate C 计划并行任务
 
@@ -74,8 +70,8 @@ Gate C 公共底座已经完成：Sender 草稿、三个藏匿点、字段校验
 
 - 现有 Tada 角色图是合并后的设定展示图；不阻塞规划，但正式分层动画需要源文件或重建透明资产。
 - `next-env.d.ts` 和 `diagrams/` 存在本轮开始前的工作区改动，当前校准不覆盖它们。
-- 当前工作区的完整 ESLint / Next CLI 会在启动阶段长期空闲；本轮已用定向 TypeScript 编译和运行级数据测试通过公共底座，三路集成前必须恢复完整构建检查。
+- 主目录存在 macOS 文件读取延迟；本轮已在隔离镜像中完成等价生产构建，并在 3002 端口启动真实移动端预览。
 
 ## 下一步唯一行动
 
-等待三路返回静态可操作版本；总控先做契约与技术审查，再逐个集成，最后只把可见 UI 和完整流程交给用户验收。
+用户从 `/create` 人工验收 Sender 六步、Receiver Preview 和返回编辑；记录 UI 与流程反馈后再决定进入 Gate D 视觉与动效打磨。
