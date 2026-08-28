@@ -1,0 +1,7 @@
+interface:
+  display_name: "Ta-da! 总控"
+  short_description: "统一管理 Ta-da! 的阶段、审核、派发与集成"
+  brand_color: "#E95F58"
+  default_prompt: "使用 $tada-control 检查 Ta-da! 当前状态，并告诉我下一步唯一行动。"
+policy:
+  allow_implicit_invocation: true
