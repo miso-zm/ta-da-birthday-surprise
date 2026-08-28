@@ -1,0 +1,689 @@
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.shell {
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  min-height: 640px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  color: var(--ink);
+  background: var(--page);
+}
+
+.header {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 10px;
+  min-height: 70px;
+  padding: max(12px, env(safe-area-inset-top)) 18px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 14%, transparent);
+  background: color-mix(in srgb, var(--page) 96%, transparent);
+}
+
+.backButton,
+.textButton,
+.dangerButton {
+  border: 0;
+  background: transparent;
+  color: var(--coral-dark);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.backButton {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+}
+
+.progress {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.progressTrack {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eadfd3;
+}
+
+.progressTrack i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--coral);
+  transition: width 180ms ease;
+}
+
+.saveStatus {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.scrollArea {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 20px 36px;
+}
+
+.stepIntro {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--coral-dark);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.stepIntro h1,
+.recoveryCard h1 {
+  margin: 0;
+  font-size: clamp(28px, 8vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+}
+
+.stepIntro > p:last-child {
+  max-width: 34em;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.formSection {
+  display: grid;
+  gap: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.fieldLabel,
+.fieldset legend,
+.photoHeading strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.fieldHint,
+.fieldset > p,
+.photoHeading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.field input,
+.field textarea,
+.captionField input,
+.dateFields select {
+  width: 100%;
+  min-height: 50px;
+  border: 2px solid color-mix(in srgb, var(--line) 56%, transparent);
+  border-radius: 18px;
+  outline: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.field input,
+.captionField input,
+.dateFields select {
+  padding: 0 15px;
+}
+
+.field textarea {
+  padding: 14px 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus,
+.captionField input:focus,
+.dateFields select:focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 18%, transparent);
+}
+
+.twoColumns,
+.dateFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fieldset legend {
+  margin-bottom: 10px;
+}
+
+.fieldset > p {
+  margin-top: 8px;
+}
+
+.choiceGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.choiceCard {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 2px solid color-mix(in srgb, var(--line) 38%, transparent);
+  border-radius: 20px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.choiceCardSelected {
+  border-color: var(--coral);
+  background: color-mix(in srgb, var(--pink) 28%, var(--paper));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--coral-dark) 50%, transparent);
+}
+
+.choiceMark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 2px solid color-mix(in srgb, var(--line) 48%, transparent);
+  border-radius: 50%;
+  color: white;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.choiceCardSelected .choiceMark {
+  border-color: var(--coral);
+  background: var(--coral);
+}
+
+.choiceCard strong,
+.choiceCard small {
+  display: block;
+}
+
+.choiceCard strong {
+  font-size: 15px;
+}
+
+.choiceCard small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.notice,
+.errorPanel,
+.honestPreviewNote {
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.notice {
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--butter) 32%, var(--paper));
+}
+
+.errorPanel {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border: 2px solid color-mix(in srgb, var(--coral) 58%, transparent);
+  background: color-mix(in srgb, var(--pink) 26%, var(--paper));
+  color: var(--coral-dark);
+}
+
+.errorPanel ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.companion {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid color-mix(in srgb, var(--line) 18%, transparent);
+  border-radius: 22px;
+  background: var(--paper);
+}
+
+.companion p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.tadaFace {
+  position: relative;
+  width: 48px;
+  height: 42px;
+  display: block;
+  border: 2px solid var(--line);
+  border-radius: 46% 52% 44% 47%;
+  background: #fff6ec;
+}
+
+.tadaFace::before,
+.tadaFace::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  width: 11px;
+  height: 12px;
+  border: 2px solid var(--line);
+  background: #b7e1d2;
+}
+
+.tadaFace::before {
+  left: 7px;
+  border-radius: 70% 30% 45% 20%;
+  transform: rotate(-14deg);
+}
+
+.tadaFace::after {
+  right: 6px;
+  height: 9px;
+  border-radius: 35% 70% 20% 45%;
+  transform: rotate(18deg);
+}
+
+.tadaFace i,
+.tadaFace b {
+  position: absolute;
+  z-index: 1;
+}
+
+.tadaFace i {
+  top: 17px;
+  left: 13px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--line);
+  box-shadow: 16px 0 var(--line), -4px 8px 0 2px #ffc1b6, 24px 8px 0 2px #ffc1b6;
+}
+
+.tadaFace b {
+  left: 20px;
+  top: 24px;
+  width: 9px;
+  height: 5px;
+  border-bottom: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+.photoHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.uploadButton,
+.smallButton {
+  position: relative;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.uploadButton {
+  padding: 0 14px;
+  flex: 0 0 auto;
+}
+
+.uploadButton input,
+.smallButton input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uploadButton:focus-within,
+.smallButton:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--coral) 36%, transparent);
+  outline-offset: 3px;
+}
+
+.photoList {
+  display: grid;
+  gap: 14px;
+}
+
+.photoSlot {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid color-mix(in srgb, var(--line) 26%, transparent);
+  border-radius: 22px;
+  background: var(--paper);
+}
+
+.photoPreview {
+  grid-row: span 2;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 2px dashed color-mix(in srgb, var(--line) 35%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--butter) 19%, var(--page));
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.photoPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoControls {
+  display: flex;
+  gap: 8px;
+}
+
+.smallButton {
+  min-width: 70px;
+  padding: 0 12px;
+}
+
+.dangerButton {
+  min-width: 54px;
+  min-height: 44px;
+}
+
+.captionField {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  align-self: end;
+}
+
+.captionField span,
+.captionField small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.captionField small {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding-left: 5px;
+  background: var(--paper);
+}
+
+.captionField input {
+  min-height: 44px;
+  padding-right: 48px;
+  font-size: 13px;
+}
+
+.photoError {
+  margin: -8px 0 0;
+  color: var(--coral-dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.summaryCard {
+  padding: 20px;
+  border: 2px solid var(--line);
+  border-radius: 28px;
+  background: var(--paper);
+  box-shadow: 0 6px 0 var(--line);
+}
+
+.summaryTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.summaryBadge {
+  color: var(--coral-dark);
+}
+
+.summaryCard h2 {
+  margin: 18px 0 8px;
+  font-size: 25px;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.summaryCard > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.summaryCard dl {
+  display: grid;
+  gap: 0;
+  margin: 20px 0 0;
+}
+
+.summaryCard dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid color-mix(in srgb, var(--line) 15%, transparent);
+  font-size: 13px;
+}
+
+.summaryCard dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.summaryCard dd {
+  margin: 0;
+  font-weight: 850;
+  text-align: right;
+}
+
+.honestPreviewNote {
+  margin: 0;
+  padding: 13px 15px;
+  background: color-mix(in srgb, var(--sky) 22%, var(--paper));
+  color: var(--muted);
+}
+
+.footer {
+  position: relative;
+  z-index: 5;
+  padding: 12px 20px max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--line) 14%, transparent);
+  background: var(--page);
+}
+
+.primaryButton {
+  width: 100%;
+  min-height: 54px;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  background: var(--coral-dark);
+  color: white;
+  box-shadow: 0 5px 0 var(--line);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.primaryButton:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--line);
+}
+
+.centeredScreen {
+  width: 100%;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--page);
+}
+
+.loadingBlock p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.loadingBlock {
+  display: grid;
+  justify-items: center;
+}
+
+.loadingMark {
+  width: 54px;
+  height: 54px;
+  border: 3px solid var(--line);
+  border-radius: 46% 53% 45% 50%;
+  background: #fff6ec;
+}
+
+.recoveryCard {
+  width: 100%;
+  max-width: 390px;
+  padding: 24px;
+  border: 2px solid var(--line);
+  border-radius: 28px;
+  background: var(--paper);
+  box-shadow: 0 7px 0 var(--line);
+}
+
+.recoveryCard .companion {
+  margin-bottom: 24px;
+  padding: 0;
+  border: 0;
+}
+
+.recoveryCopy {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.progressNote {
+  display: inline-block;
+  margin: 15px 0 20px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--butter) 35%, var(--paper));
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.textButton {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+}
+
+@media (max-width: 370px) {
+  .scrollArea {
+    padding-inline: 16px;
+  }
+
+  .footer {
+    padding-inline: 16px;
+  }
+
+  .twoColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .photoSlot {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressTrack i,
+  .primaryButton {
+    transition: none;
+  }
+}

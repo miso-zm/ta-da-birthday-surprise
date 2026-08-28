@@ -114,6 +114,9 @@ export function validateSenderDraft(
   if (draft.scrapbook.slots.length < 1 || draft.scrapbook.slots.length > 3) {
     add("scrapbook", "Scrapbook 需要保留 1–3 个照片位。");
   }
+  if (!draft.scrapbook.slots.some((slot) => Boolean(slot.imageUrl?.trim()))) {
+    add("scrapbook", "请至少上传 1 张照片，最多 3 张。");
+  }
   if (draft.scrapbook.slots.some((slot) => slot.caption.trim().length > 30)) {
     add("scrapbook", "每张照片的说明不能超过 30 个字。");
   }
