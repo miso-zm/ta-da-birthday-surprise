@@ -1,6 +1,6 @@
 # Receiver 与 Sender 流程
 
-**状态：** Draft 0.1，等待用户审核
+**状态：** Approved 0.1
 
 ## Receiver 黄金路径
 
