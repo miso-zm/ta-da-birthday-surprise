@@ -79,8 +79,8 @@ const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
     intro: "选一种方式，把想说的话和回忆留下来。",
   },
   gift: {
-    title: "礼物里装着什么？",
-    intro: "收礼人拆开礼物后，才会自己打开这个链接。",
+    title: "还要准备一份小礼物吗？",
+    intro: "没有也没关系，生日卡或手帐本身就是一份礼物。",
   },
   publish: {
     title: "先看看对方会收到什么",
@@ -1592,43 +1592,49 @@ export function SenderBuilder({
 
           {currentStep === "gift" ? (
             <>
-              <Field label="礼物叫什么" hint={`${draft.gift.title.length}/40`}>
-                <input
-                  value={draft.gift.title}
-                  minLength={2}
-                  maxLength={40}
-                  onChange={(event) => replaceDraft((previous) => ({
-                    ...previous,
-                    gift: { ...previous.gift, title: event.target.value },
-                  }))}
-                />
-              </Field>
-              <Field label="想补充的话（可选）" hint={`${draft.gift.description.length}/120`}>
-                <textarea
-                  value={draft.gift.description}
-                  maxLength={120}
-                  rows={4}
-                  onChange={(event) => replaceDraft((previous) => ({
-                    ...previous,
-                    gift: { ...previous.gift, description: event.target.value },
-                  }))}
-                />
-              </Field>
-              <Field label="礼物链接" hint="请填写以 https:// 开头的链接">
-                <input
-                  type="url"
-                  inputMode="url"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  value={draft.gift.externalUrl}
-                  placeholder="https://example.com/gift"
-                  onChange={(event) => replaceDraft((previous) => ({
-                    ...previous,
-                    gift: { ...previous.gift, externalUrl: event.target.value },
-                  }))}
-                />
-              </Field>
-              <TadaMessage message="链接不会自己跳开，等对方拆开礼物后再决定要不要看。" />
+              <fieldset className={styles.fieldset}>
+                <legend>选择礼物安排</legend>
+                <div className={styles.choiceGrid}>
+                  <ChoiceCard
+                    selected={draft.gift.kind === "none"}
+                    title="这次只送生日贺卡"
+                    description="不加额外礼物，直接把这份生日卡或手帐送给 TA"
+                    onClick={() => replaceDraft((previous) => ({
+                      ...previous,
+                      gift: { ...previous.gift, kind: "none" },
+                    }))}
+                  />
+                  <ChoiceCard
+                    selected={draft.gift.kind === "link"}
+                    title="还有一份小礼物等 TA 收下"
+                    description="粘贴领取链接，TA 拆开礼盒后可以自己打开"
+                    onClick={() => replaceDraft((previous) => ({
+                      ...previous,
+                      gift: { ...previous.gift, kind: "link" },
+                    }))}
+                  />
+                </div>
+              </fieldset>
+
+              {draft.gift.kind === "link" ? (
+                <>
+                  <Field label="礼物领取链接" hint="淘宝、京东、微信小店等链接都可以">
+                    <input
+                      type="url"
+                      inputMode="url"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      value={draft.gift.externalUrl}
+                      placeholder="https://"
+                      onChange={(event) => replaceDraft((previous) => ({
+                        ...previous,
+                        gift: { ...previous.gift, externalUrl: event.target.value },
+                      }))}
+                    />
+                  </Field>
+                  <TadaMessage message="链接会等 TA 拆开礼盒后，再由 TA 自己打开。" />
+                </>
+              ) : null}
             </>
           ) : null}
 
@@ -1647,7 +1653,10 @@ export function SenderBuilder({
                         : `回忆手帐 · ${draft.scrapbook.slots.filter((slot) => slot.imageUrl).length} 张照片`}
                     </dd>
                   </div>
-                  <div><dt>礼物</dt><dd>{draft.gift.title}</dd></div>
+                  <div>
+                    <dt>额外礼物</dt>
+                    <dd>{draft.gift.kind === "link" ? "有，领取链接已准备好" : "没有，只送生日卡或手帐"}</dd>
+                  </div>
                 </dl>
               </section>
               <TadaMessage message="预览会带你看完整流程，不用走完也能回来继续修改。" />
