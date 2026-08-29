@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import type { GiftContent } from "@/lib/surprise-contract";
 import { isHttpsUrl } from "@/lib/surprise-contract";
 import { PrimaryButton } from "@/features/shared/placeholders";
+import {
+  getGiftLinkPlatform,
+  type GiftLinkPlatformId,
+} from "./gift-link-platform";
 import styles from "./gift-reveal.module.css";
 
 type GiftRevealProps = {
@@ -12,108 +17,131 @@ type GiftRevealProps = {
   onContinue: () => void;
 };
 
-type RevealPhase = "closed" | "opening" | "revealed";
+function PlatformIcon({ platform }: { platform: GiftLinkPlatformId }) {
+  if (platform === "taobao") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.5 8.25h11l-.7 10H7.2l-.7-10Z" />
+        <path d="M9 9V6.8a3 3 0 0 1 6 0V9" />
+        <path d="M9.2 13.1h5.6M12 10.8v4.6" />
+      </svg>
+    );
+  }
+
+  if (platform === "jd") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m5.25 8.2 6.75-3 6.75 3v8.1l-6.75 3-6.75-3V8.2Z" />
+        <path d="m5.5 8.35 6.5 3 6.5-3M12 11.35v7.5" />
+        <path d="m8.65 6.7 6.55 3" />
+      </svg>
+    );
+  }
+
+  if (platform === "wechat-shop") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5.25 9.25h13.5v9.5H5.25z" />
+        <path d="m4.4 9.25 1.7-4h11.8l1.7 4M9 18.75v-5.1h6v5.1" />
+        <path d="M4.4 9.25c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m9.35 14.65 5.3-5.3" />
+      <path d="M9.15 10.85a3.54 3.54 0 0 0-5 0L1.1 13.9a3.54 3.54 0 0 0 5 5l1-1" />
+      <path d="M14.85 13.15a3.54 3.54 0 0 0 5 0l3.05-3.05a3.54 3.54 0 0 0-5-5l-1 1" />
+    </svg>
+  );
+}
+
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  );
+}
 
 export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
-  const [phase, setPhase] = useState<RevealPhase>("closed");
-  const timersRef = useRef<number[]>([]);
+  const [revealed, setRevealed] = useState(false);
+  const didRevealRef = useRef(false);
   const validUrl = isHttpsUrl(gift.externalUrl);
-  const revealed = phase === "revealed";
-  const opening = phase === "opening";
-
-  useEffect(() => () => {
-    timersRef.current.forEach((timer) => window.clearTimeout(timer));
-  }, []);
+  const platform = validUrl ? getGiftLinkPlatform(gift.externalUrl) : null;
 
   const reveal = () => {
-    if (phase !== "closed") {
+    if (didRevealRef.current) {
       return;
     }
 
+    didRevealRef.current = true;
     onReveal();
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPhase("revealed");
-      return;
-    }
-
-    setPhase("opening");
-    timersRef.current = [
-      window.setTimeout(() => setPhase("revealed"), 2600),
-    ];
+    setRevealed(true);
   };
 
   return (
     <section className={styles.reveal}>
-      {phase === "closed" ? (
+      {!revealed ? (
         <div className={styles.preopen}>
-          <img
+          <Image
             src="/assets/gift/gift-preopen-hero-v1.png"
             alt="Tada 站在一份珊瑚色礼盒旁，把礼物送到啦"
+            width={1086}
+            height={1448}
             className={styles.preopenHero}
           />
           <PrimaryButton onClick={reveal}>拆开礼物</PrimaryButton>
         </div>
-      ) : !revealed ? (
-        <>
-          <div
-            className={styles.scene}
-            data-opening={opening}
-            role="img"
-            aria-label={opening ? "礼物正在打开" : "一份还没打开的小礼物"}
-          >
-            <img
-              src="/assets/gift/gift-box-closed-v1.png"
-              alt=""
-              aria-hidden="true"
-              className={styles.closedBox}
-            />
-            <img
-              src="/assets/gift/gift-box-lid-v1.png"
-              alt=""
-              aria-hidden="true"
-              className={styles.lid}
-            />
-            <img
-              src="/assets/gift/tada-gift-pop-v1.png"
-              alt=""
-              aria-hidden="true"
-              className={styles.tadaPop}
-            />
-          </div>
-          <PrimaryButton onClick={reveal} disabled={opening}>
-            {opening ? "正在拆开…" : "拆开礼物"}
-          </PrimaryButton>
-        </>
       ) : (
-        <>
-          <div className={styles.completeScene}>
-            <img
-              src="/assets/gift/tada-gift-reveal-complete-v2.png"
-              alt="Tada 从打开的礼盒中探出头来"
-            />
-          </div>
-          <div className="paper-surface mt-5 rounded-[var(--radius-md)] p-5 text-center">
-            {validUrl ? (
-              <>
-                <p className="text-sm font-medium leading-6 text-[var(--muted)]">打开链接，就能去收下这份小礼物。</p>
-                <a
-                  href={gift.externalUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="mt-5 inline-flex min-h-12 items-center justify-center rounded-[var(--radius-round)] border-0 bg-[var(--coral-action)] px-5 font-bold text-[var(--on-dark)] shadow-[var(--shadow-pressed)] active:translate-y-px active:shadow-none"
-                >
-                  去收下小礼物
-                </a>
-              </>
+        <div className={styles.receipt}>
+          <h1 className={styles.title}>礼物已经送到啦</h1>
+
+          <Image
+            src="/assets/gift/tada-gift-receipt-hero-v1.png"
+            alt="Tada 从打开的珊瑚色礼盒中探出头，四周飘着彩纸"
+            width={954}
+            height={713}
+            className={styles.receiptHero}
+          />
+
+          <div className={styles.linkSection}>
+            <p className={styles.linkLabel}>礼物领取链接</p>
+            {platform ? (
+              <a
+                href={platform.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className={styles.platformCard}
+                aria-label={`打开${platform.name}礼物领取链接（新窗口）`}
+              >
+                <span className={styles.platformIcon} data-platform={platform.id}>
+                  <PlatformIcon platform={platform.id} />
+                </span>
+                <span className={styles.platformText}>
+                  <strong>{platform.name}</strong>
+                  <span>{platform.domain}</span>
+                </span>
+                <span className={styles.arrowIcon}>
+                  <ArrowIcon />
+                </span>
+              </a>
             ) : (
-              <p role="alert" className="rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--color-danger)_14%,white)] px-3 py-2 text-sm font-semibold">
-                礼物链接暂时打不开，你可以先继续看看。
-              </p>
+              <div className={styles.platformCard} aria-disabled="true">
+                <span className={styles.platformIcon} data-platform="generic">
+                  <PlatformIcon platform="generic" />
+                </span>
+                <span className={styles.platformText} role="alert">
+                  <strong>礼物链接暂时不可用</strong>
+                  <span>请联系送礼人</span>
+                </span>
+              </div>
             )}
           </div>
-          <PrimaryButton onClick={onContinue}>收好这份惊喜</PrimaryButton>
-        </>
+
+          <PrimaryButton onClick={onContinue}>收好礼物</PrimaryButton>
+        </div>
       )}
     </section>
   );
