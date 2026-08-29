@@ -1,5 +1,11 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import type { CardContent, Person } from "@/lib/surprise-contract";
 import { PrimaryButton, StageCard } from "@/features/shared/placeholders";
+import letterCardArtwork from "./assets/letter-card-background.png";
+import styles from "./birthday-card.module.css";
 
 type BirthdayCardProps = {
   recipient: Person;
@@ -42,42 +48,96 @@ type CardTemplateProps = {
   message: string;
 };
 
-function CoralCard({ recipientName, senderName, signature, message }: CardTemplateProps) {
+type MessageDensity = "short" | "medium" | "long" | "maximum";
+
+function countVisibleCharacters(value: string): number {
+  return Array.from(value.replace(/\s/g, "")).length;
+}
+
+function getMessageDensity(message: string): MessageDensity {
+  const length = countVisibleCharacters(message);
+  if (length <= 45) return "short";
+  if (length <= 95) return "medium";
+  if (length <= 150) return "long";
+  return "maximum";
+}
+
+function getMessageClass(density: MessageDensity): string {
+  if (density === "short") return styles.messageShort;
+  if (density === "medium") return styles.messageMedium;
+  if (density === "long") return styles.messageLong;
+  return styles.messageMaximum;
+}
+
+function LetterCard({ recipientName, signature, message }: Omit<CardTemplateProps, "senderName">) {
+  const density = getMessageDensity(message);
+  const recipientIsCompact = countVisibleCharacters(recipientName) > 12;
+  const signatureIsCompact = countVisibleCharacters(signature) > 12;
+  const [isFontReady, setIsFontReady] = useState(false);
+  const fontSample = `给 ${recipientName}${message}${signature}`;
+  const regionClass = density === "short"
+    ? styles.messageRegionShort
+    : density === "medium"
+      ? styles.messageRegionMedium
+      : density === "maximum"
+        ? styles.messageRegionMaximum
+        : "";
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!document.fonts) {
+      Promise.resolve().then(() => {
+        if (isActive) setIsFontReady(true);
+      });
+      return () => {
+        isActive = false;
+      };
+    }
+
+    document.fonts.load('300 16px "NaikaiCard"', fontSample).then(
+      () => {
+        if (isActive) setIsFontReady(true);
+      },
+      () => {
+        if (isActive) setIsFontReady(true);
+      },
+    );
+
+    return () => {
+      isActive = false;
+    };
+  }, [fontSample]);
+
+  const pendingClass = isFontReady ? "" : styles.handwritingPending;
+
   return (
     <article
-      className="relative min-h-[430px] overflow-hidden rounded-[26px] border-[3px] border-[var(--line)] bg-[#fff0e8] px-6 py-7 shadow-[0_6px_0_#d9a69b]"
-      aria-label="珊瑚生日贺卡"
+      className={styles.letterCard}
+      aria-label={`给 ${recipientName} 的手写生日信`}
+      aria-busy={!isFontReady}
     >
-      <div className="absolute -right-9 -top-10 size-32 rounded-full border-[3px] border-[var(--line)] bg-[var(--pink)]" aria-hidden="true" />
-      <div className="absolute -bottom-12 -left-10 size-32 rounded-full border-[3px] border-[var(--line)] bg-[var(--butter)]" aria-hidden="true" />
-      <div className="absolute right-5 top-16 flex gap-1.5" aria-hidden="true">
-        <span className="size-2 rounded-full bg-[var(--coral)]" />
-        <span className="size-2 rounded-full bg-[var(--sage)]" />
-        <span className="size-2 rounded-full bg-[var(--butter)]" />
-      </div>
-
-      <div className="relative z-10 flex min-h-[368px] flex-col">
-        <div>
-          <p className="break-words text-xs font-black tracking-[0.16em] text-[var(--coral-dark)] [overflow-wrap:anywhere]">TO {recipientName}</p>
-          <h1 className="mt-4 max-w-[12ch] text-[32px] font-black leading-[1.08] tracking-[-0.05em] text-[var(--ink)]">
-            新的一岁，
-            <span className="relative mt-1 block w-fit">
-              继续闪闪发光
-              <span className="absolute inset-x-0 bottom-0 -z-10 h-3 rounded-full bg-[color-mix(in_srgb,var(--coral)_34%,transparent)]" aria-hidden="true" />
-            </span>
-          </h1>
-        </div>
-
-        <div className="my-6 h-[3px] w-12 rounded-full bg-[var(--line)]" aria-hidden="true" />
-        <p className="whitespace-pre-wrap break-words text-[15px] font-semibold leading-7 text-[var(--ink)] [overflow-wrap:anywhere]">
+      <Image
+        src={letterCardArtwork}
+        alt=""
+        fill
+        sizes="(max-width: 430px) 100vw, 378px"
+        className={styles.letterArtwork}
+        aria-hidden="true"
+        draggable={false}
+        priority
+      />
+      <p className={`${styles.handwriting} ${pendingClass} ${styles.recipient} ${recipientIsCompact ? styles.recipientCompact : ""}`}>
+        给 {recipientName}
+      </p>
+      <div className={`${styles.messageRegion} ${regionClass}`}>
+        <p className={`${styles.handwriting} ${pendingClass} ${styles.message} ${getMessageClass(density)}`}>
           {message}
         </p>
-
-        <footer className="mt-auto pt-8 text-right">
-          <p className="text-xs font-bold text-[var(--muted)]">由 {senderName} 亲手写下</p>
-          <p className="mt-1 text-lg font-black text-[var(--coral-dark)]">— {signature}</p>
-        </footer>
       </div>
+      <p className={`${styles.handwriting} ${pendingClass} ${styles.signature} ${signatureIsCompact ? styles.signatureCompact : ""} ${density === "maximum" ? styles.signatureMaximum : ""}`}>
+        {signature}
+      </p>
     </article>
   );
 }
@@ -123,10 +183,15 @@ export function BirthdayCard({ recipient, sender, card, onContinue }: BirthdayCa
   const signature = card.signature.trim() || senderName;
 
   return (
-    <StageCard label={template === "coral-birthday" ? "一封珊瑚生日信" : "一封暖奶油许愿信"}>
-      <TadaLetterPlaceholder />
+    <StageCard label={template === "coral-birthday" ? "递到你手里的信" : "一封暖奶油许愿信"}>
+      {template === "cream-wishes" ? <TadaLetterPlaceholder /> : null}
       {template === "coral-birthday" ? (
-        <CoralCard recipientName={recipientName} senderName={senderName} signature={signature} message={card.message} />
+        <LetterCard
+          key={`${recipientName}\u0000${card.message}\u0000${signature}`}
+          recipientName={recipientName}
+          signature={signature}
+          message={card.message}
+        />
       ) : (
         <CreamWishesCard recipientName={recipientName} senderName={senderName} signature={signature} message={card.message} />
       )}

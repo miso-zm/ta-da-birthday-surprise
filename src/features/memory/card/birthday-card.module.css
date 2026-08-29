@@ -1,0 +1,160 @@
+@import "./fonts/naikai/naikai-card.css";
+
+.letterCard {
+  container-type: inline-size;
+  position: relative;
+  width: calc(100% + 48px);
+  margin: 16px -24px 0;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #fff8eb;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--line) 42%, transparent);
+  isolation: isolate;
+}
+
+.letterArtwork {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+}
+
+.handwriting {
+  color: #553c26;
+  font-family: "NaikaiCard", "HanziPen SC", "Klee", "Kaiti SC", "STKaiti", cursive;
+  font-style: normal;
+  font-weight: 300;
+  font-synthesis: none;
+  letter-spacing: 0.015em;
+}
+
+.handwritingPending {
+  visibility: hidden;
+}
+
+.recipient {
+  position: absolute;
+  z-index: 1;
+  top: 12.7%;
+  right: 16%;
+  left: 18.5%;
+  margin: 0;
+  font-size: clamp(21px, 7.2cqi, 29px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.recipientCompact {
+  top: 10.5%;
+  font-size: clamp(15px, 4.8cqi, 19px);
+  line-height: 1.25;
+}
+
+.recipient::after {
+  display: block;
+  width: min(56%, 150px);
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #ef8067;
+  content: "";
+  transform: rotate(-1deg);
+  transform-origin: left center;
+}
+
+.messageRegion {
+  position: absolute;
+  z-index: 1;
+  top: 22%;
+  right: 15%;
+  bottom: 30.5%;
+  left: 18.5%;
+  display: flex;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.messageRegionShort,
+.messageRegionMedium {
+  align-items: center;
+}
+
+.messageRegionMaximum {
+  top: 21%;
+  right: 9%;
+  bottom: 32%;
+  left: 10.5%;
+}
+
+.message {
+  width: 100%;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.messageShort {
+  /* 10–45 字共用同一视觉上限；文案再短也不继续放大。 */
+  font-size: clamp(21px, 7.4cqi, 27px);
+  line-height: 1.58;
+}
+
+.messageMedium {
+  font-size: clamp(17px, 5.7cqi, 22px);
+  line-height: 1.55;
+}
+
+.messageLong {
+  font-size: clamp(14px, 4.45cqi, 17px);
+  line-height: 1.52;
+}
+
+.messageMaximum {
+  font-size: clamp(12.5px, 3.72cqi, 14.5px);
+  line-height: 1.47;
+  letter-spacing: 0.005em;
+}
+
+.signature {
+  position: absolute;
+  z-index: 1;
+  top: 67.2%;
+  right: 16%;
+  max-width: 62%;
+  margin: 0;
+  font-size: clamp(18px, 5.8cqi, 24px);
+  line-height: 1.16;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.signatureCompact {
+  top: 66.5%;
+  font-size: clamp(15px, 4.7cqi, 20px);
+}
+
+.signatureMaximum {
+  top: 68.5%;
+  right: 8%;
+  max-width: 82%;
+  font-size: clamp(13px, 4cqi, 16px);
+}
+
+.signature::after {
+  display: block;
+  width: min(100%, 120px);
+  height: 3px;
+  margin-top: 4px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: #ef8067;
+  content: "";
+  transform: rotate(-1deg);
+  transform-origin: right center;
+}

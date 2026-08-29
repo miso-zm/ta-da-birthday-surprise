@@ -1,0 +1,49 @@
+/*
+ * 内海字体 Light — card-only local webfont.
+ * See README.md and OFL-1.1.txt in this directory for source and license.
+ * font-display:block keeps the browser from briefly painting a fallback font.
+ */
+@font-face {
+  font-family: "NaikaiCard";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("./naikai-card-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+2000-206F, U+3000-303F, U+FF00-FFEF;
+}
+
+@font-face {
+  font-family: "NaikaiCard";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("./naikai-card-cjk-a.woff2") format("woff2");
+  unicode-range: U+3400-4DFF, U+4E00-5FFF;
+}
+
+@font-face {
+  font-family: "NaikaiCard";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("./naikai-card-cjk-b.woff2") format("woff2");
+  unicode-range: U+6000-77FF;
+}
+
+@font-face {
+  font-family: "NaikaiCard";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("./naikai-card-cjk-c.woff2") format("woff2");
+  unicode-range: U+7800-8FFF;
+}
+
+@font-face {
+  font-family: "NaikaiCard";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("./naikai-card-cjk-d.woff2") format("woff2");
+  unicode-range: U+9000-9FFF, U+F900-FAFF, U+20000-2FA1F;
+}
