@@ -8,36 +8,30 @@ export const demoSurprise: Surprise = {
   birthday: "0828",
   opening: {
     templateId: "warm-letter",
-    title: "Mia，今天有一份惊喜给你",
-    prompt: "Sunny 藏了一段祝福，还有一份需要亲手解锁的礼物。",
+    title: "Mia，生日快乐！",
+    prompt: "Sunny 留了一段想对你说的话，还有一份小礼物，等你亲手打开。",
   },
   unlock: {
     kind: "find-gift",
     sceneId: "cozy-room",
-    targetId: "cabinet-gift",
+    targetId: "sofa-box",
   },
-  card: {
-    templateId: "coral-birthday",
-    message: "希望新的一岁继续做喜欢的事，见喜欢的人，也记得好好照顾自己。",
-    signature: "Sunny",
-  },
-  scrapbook: {
-    templateId: "three-memories",
-    title: "我们的快乐碎片",
-    slots: [
-      { id: "memory-1", caption: "一起庆祝的日子" },
-      { id: "memory-2", caption: "普通但很快乐的一天" },
-      { id: "memory-3", caption: "以后还要继续收集" },
-    ],
+  memory: {
+    kind: "card",
+    card: {
+      templateId: "coral-birthday",
+      message: "愿新的一岁里，你还可以做喜欢的事，见喜欢的人，也别忘了照顾好自己。",
+      signature: "Sunny",
+    },
   },
   gift: {
     title: "一本属于你的年度照片书",
-    description: "礼物会在新页面中打开，你可以稍后再回来继续看祝福。",
+    description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
     externalUrl: "https://example.com",
   },
   share: {
-    title: "给 Mia 的生日惊喜",
-    text: "这份生日惊喜也想和你分享。",
+    title: "Mia 的生日惊喜",
+    text: "Sunny 准备了一份生日惊喜，想和你分享。",
   },
 };
 

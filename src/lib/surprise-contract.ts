@@ -13,9 +13,9 @@ export type RockPaperScissorsConfig = {
 };
 
 export const FIND_GIFT_TARGET_IDS = [
-  "cabinet-gift",
-  "sofa-gift",
-  "plant-gift",
+  "sofa-box",
+  "plant-box",
+  "rug-box",
 ] as const;
 
 export type FindGiftTargetId = (typeof FIND_GIFT_TARGET_IDS)[number];
@@ -26,18 +26,24 @@ export type FindGiftConfig = {
   targetId: FindGiftTargetId;
 };
 
-export type BirthdayPasswordConfig = {
-  kind: "birthday-password";
-  answer: string;
+export type BlowCandlesConfig = {
+  kind: "blow-candles";
+};
+
+export type NoUnlockConfig = {
+  kind: "none";
 };
 
 export type UnlockConfig =
+  | NoUnlockConfig
   | RockPaperScissorsConfig
   | FindGiftConfig
-  | BirthdayPasswordConfig;
+  | BlowCandlesConfig;
+
+export type PlayableUnlockConfig = Exclude<UnlockConfig, NoUnlockConfig>;
 
 export type UnlockResult = {
-  kind: UnlockConfig["kind"];
+  kind: PlayableUnlockConfig["kind"];
   attempts: number;
   usedFallback: boolean;
 };
@@ -48,17 +54,35 @@ export type CardContent = {
   signature: string;
 };
 
+export const SCRAPBOOK_TEMPLATE_SLOT_COUNTS = {
+  "one-photo": 1,
+  "two-photo": 2,
+  "three-photo": 3,
+} as const;
+
+export type ScrapbookTemplateId = keyof typeof SCRAPBOOK_TEMPLATE_SLOT_COUNTS;
+
+export type ScrapbookPhotoTransform = {
+  x: number;
+  y: number;
+  scale: number;
+};
+
 export type ScrapbookSlot = {
   id: string;
-  caption: string;
   imageUrl?: string;
+  transform: ScrapbookPhotoTransform;
 };
 
 export type ScrapbookContent = {
-  templateId: string;
-  title: string;
+  templateId: ScrapbookTemplateId;
+  description: string;
   slots: ScrapbookSlot[];
 };
+
+export type MemoryContent =
+  | { kind: "card"; card: CardContent }
+  | { kind: "scrapbook"; scrapbook: ScrapbookContent };
 
 export type GiftContent = {
   title: string;
@@ -79,8 +103,7 @@ export type SurpriseContent = {
   birthday: string;
   opening: OpeningContent;
   unlock: UnlockConfig;
-  card: CardContent;
-  scrapbook: ScrapbookContent;
+  memory: MemoryContent;
   gift: GiftContent;
   share: ShareContent;
 };
@@ -98,32 +121,31 @@ export type SurprisePreview = SurpriseContent & {
 export type SenderStep =
   | "basics"
   | "unlock"
-  | "card"
-  | "scrapbook"
+  | "memory"
   | "gift"
   | "publish";
 
 export const SENDER_STEPS: SenderStep[] = [
   "basics",
   "unlock",
-  "card",
-  "scrapbook",
+  "memory",
   "gift",
   "publish",
 ];
 
 export type SenderUnlockDraft =
+  | NoUnlockConfig
   | RockPaperScissorsConfig
   | {
       kind: "find-gift";
       targetId: FindGiftTargetId;
     }
   | {
-      kind: "birthday-password";
+      kind: "blow-candles";
     };
 
 export type SenderDraft = {
-  version: 1;
+  version: 2;
   draftId: string;
   updatedAt: string;
   basics: {
@@ -134,6 +156,7 @@ export type SenderDraft = {
     openingTitle: string;
     openingPrompt: string;
   };
+  memoryKind: MemoryContent["kind"];
   unlock: SenderUnlockDraft;
   card: CardContent;
   scrapbook: ScrapbookContent;
@@ -158,8 +181,7 @@ export type SenderPreviewResult =
 export type ReceiverStep =
   | "opening"
   | "unlock"
-  | "card"
-  | "scrapbook"
+  | "memory"
   | "gift"
   | "share";
 

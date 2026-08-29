@@ -1,7 +1,9 @@
 import {
   FIND_GIFT_TARGET_IDS,
+  SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
   type SenderDraft,
   type SenderUnlockDraft,
+  type ScrapbookTemplateId,
 } from "./surprise-contract";
 
 export const SENDER_DRAFT_STORAGE_KEY = "ta-da:sender-draft:v1";
@@ -26,12 +28,95 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
+const LEGACY_FIND_GIFT_TARGETS = {
+  "cabinet-gift": "rug-box",
+  "sofa-gift": "sofa-box",
+  "plant-gift": "plant-box",
+} as const;
+
+function migrateLegacySenderDraft(value: unknown): unknown {
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  let migrated = value;
+
+  if (isRecord(migrated.unlock) && migrated.unlock.kind === "birthday-password") {
+    migrated = { ...migrated, unlock: { kind: "blow-candles" } };
+  }
+
+  if (
+    isRecord(migrated.unlock) &&
+    migrated.unlock.kind === "find-gift" &&
+    isString(migrated.unlock.targetId) &&
+    migrated.unlock.targetId in LEGACY_FIND_GIFT_TARGETS
+  ) {
+    const legacyTarget = migrated.unlock.targetId as keyof typeof LEGACY_FIND_GIFT_TARGETS;
+    migrated = {
+      ...migrated,
+      unlock: {
+        ...migrated.unlock,
+        targetId: LEGACY_FIND_GIFT_TARGETS[legacyTarget],
+      },
+    };
+  }
+
+  if (isRecord(migrated.scrapbook) && Array.isArray(migrated.scrapbook.slots)) {
+    const legacySlots = migrated.scrapbook.slots.filter(isRecord);
+    const rawTemplate = isString(migrated.scrapbook.templateId)
+      ? migrated.scrapbook.templateId
+      : "one-photo";
+    const templateId: ScrapbookTemplateId = rawTemplate === "one-photo" || rawTemplate === "one-memory"
+      ? "one-photo"
+      : rawTemplate === "two-photo" || rawTemplate === "two-memories"
+        ? "two-photo"
+        : "three-photo";
+    const slotCount = SCRAPBOOK_TEMPLATE_SLOT_COUNTS[templateId];
+    const firstLegacyCaption = legacySlots
+      .map((slot) => slot.caption)
+      .find(isString);
+    const legacyDescription = isString(migrated.scrapbook.description)
+      ? migrated.scrapbook.description
+      : isString(migrated.scrapbook.title)
+        ? migrated.scrapbook.title
+        : firstLegacyCaption;
+    const slots = Array.from({ length: slotCount }, (_, index) => {
+      const oldSlot = legacySlots[index];
+      const oldTransform = oldSlot && isRecord(oldSlot.transform) ? oldSlot.transform : null;
+      return {
+        id: oldSlot && isString(oldSlot.id) ? oldSlot.id : `memory-${index + 1}`,
+        ...(oldSlot && isString(oldSlot.imageUrl) ? { imageUrl: oldSlot.imageUrl } : {}),
+        transform: {
+          x: oldTransform && typeof oldTransform.x === "number" ? oldTransform.x : 0,
+          y: oldTransform && typeof oldTransform.y === "number" ? oldTransform.y : 0,
+          scale: oldTransform && typeof oldTransform.scale === "number" ? oldTransform.scale : 1,
+        },
+      };
+    });
+    migrated = {
+      ...migrated,
+      version: 2,
+      scrapbook: {
+        templateId,
+        description: isString(legacyDescription) ? legacyDescription.slice(0, 20) : "",
+        slots,
+      },
+    };
+  }
+
+  return migrated;
+}
+
 function isSenderUnlockDraft(value: unknown): value is SenderUnlockDraft {
   if (!isRecord(value)) {
     return false;
   }
 
-  if (value.kind === "rps" || value.kind === "birthday-password") {
+  if (
+    value.kind === "none" ||
+    value.kind === "rps" ||
+    value.kind === "blow-candles"
+  ) {
     return true;
   }
 
@@ -48,13 +133,16 @@ function isScrapbookSlot(value: unknown): boolean {
   return (
     isRecord(value) &&
     isString(value.id) &&
-    isString(value.caption) &&
-    (value.imageUrl === undefined || isString(value.imageUrl))
+    (value.imageUrl === undefined || isString(value.imageUrl)) &&
+    isRecord(value.transform) &&
+    typeof value.transform.x === "number" &&
+    typeof value.transform.y === "number" &&
+    typeof value.transform.scale === "number"
   );
 }
 
-export function isSenderDraft(value: unknown): value is SenderDraft {
-  if (!isRecord(value) || value.version !== 1) {
+function hasSenderDraftShape(value: unknown): value is Record<string, unknown> {
+  if (!isRecord(value) || value.version !== 2) {
     return false;
   }
 
@@ -76,12 +164,20 @@ export function isSenderDraft(value: unknown): value is SenderDraft {
     isString(value.card.message) &&
     isString(value.card.signature) &&
     isString(value.scrapbook.templateId) &&
-    isString(value.scrapbook.title) &&
+    value.scrapbook.templateId in SCRAPBOOK_TEMPLATE_SLOT_COUNTS &&
+    isString(value.scrapbook.description) &&
     Array.isArray(value.scrapbook.slots) &&
     value.scrapbook.slots.every(isScrapbookSlot) &&
     isString(value.gift.title) &&
     isString(value.gift.description) &&
     isString(value.gift.externalUrl)
+  );
+}
+
+export function isSenderDraft(value: unknown): value is SenderDraft {
+  return (
+    hasSenderDraftShape(value) &&
+    (value.memoryKind === "card" || value.memoryKind === "scrapbook")
   );
 }
 
@@ -96,9 +192,18 @@ export function loadSenderDraft(
 
   try {
     const parsed: unknown = JSON.parse(serialized);
-    return isSenderDraft(parsed)
-      ? { status: "ready", draft: parsed }
-      : { status: "invalid", reason: "草稿格式已过期或不完整。" };
+    const migrated = migrateLegacySenderDraft(parsed);
+
+    if (isSenderDraft(migrated)) {
+      return { status: "ready", draft: migrated };
+    }
+    if (hasSenderDraftShape(migrated) && migrated.memoryKind === undefined) {
+      return {
+        status: "ready",
+        draft: { ...migrated, memoryKind: "card" } as SenderDraft,
+      };
+    }
+    return { status: "invalid", reason: "草稿格式已过期或不完整。" };
   } catch {
     return { status: "invalid", reason: "草稿内容无法读取。" };
   }

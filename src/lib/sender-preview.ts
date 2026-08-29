@@ -1,5 +1,6 @@
 import {
   FIND_GIFT_TARGET_IDS,
+  SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
   SENDER_STEPS,
   isHttpsUrl,
   type SenderDraft,
@@ -14,7 +15,7 @@ export function createDefaultSenderDraft(
   updatedAt = new Date().toISOString(),
 ): SenderDraft {
   return {
-    version: 1,
+    version: 2,
     draftId: "local-demo-draft",
     updatedAt,
     basics: {
@@ -22,30 +23,27 @@ export function createDefaultSenderDraft(
       senderName: "Sunny",
       birthday: "0828",
       openingTemplateId: "warm-letter",
-      openingTitle: "Mia，今天有一份惊喜给你",
-      openingPrompt: "Sunny 藏了一段祝福，还有一份需要亲手解锁的礼物。",
+      openingTitle: "Mia，生日快乐！",
+      openingPrompt: "Sunny 留了一段想对你说的话，还有一份小礼物，等你亲手打开。",
     },
+    memoryKind: "card",
     unlock: {
       kind: "find-gift",
-      targetId: "cabinet-gift",
+      targetId: "sofa-box",
     },
     card: {
       templateId: "coral-birthday",
-      message: "希望新的一岁继续做喜欢的事，见喜欢的人，也记得好好照顾自己。",
+      message: "愿新的一岁里，你还可以做喜欢的事，见喜欢的人，也别忘了照顾好自己。",
       signature: "Sunny",
     },
     scrapbook: {
-      templateId: "three-memories",
-      title: "我们的快乐碎片",
-      slots: [
-        { id: "memory-1", caption: "一起庆祝的日子" },
-        { id: "memory-2", caption: "普通但很快乐的一天" },
-        { id: "memory-3", caption: "以后还要继续收集" },
-      ],
+      templateId: "one-photo",
+      description: "一起收藏这一天",
+      slots: [{ id: "memory-1", transform: { x: 0, y: 0, scale: 1 } }],
     },
     gift: {
       title: "一本属于你的年度照片书",
-      description: "礼物会在新页面中打开，你可以稍后再回来继续看祝福。",
+      description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
       externalUrl: "https://example.com",
     },
   };
@@ -75,61 +73,57 @@ export function validateSenderDraft(
   const senderName = draft.basics.senderName.trim();
 
   if (recipientName.length < 1 || recipientName.length > 20) {
-    add("basics", "收件人称呼需要 1–20 个字。");
+    add("basics", "请填写收礼人的称呼（1–20 个字）。");
   }
   if (senderName.length < 1 || senderName.length > 20) {
-    add("basics", "送礼人称呼需要 1–20 个字。");
+    add("basics", "请填写你的称呼（1–20 个字）。");
   }
   if (!isValidBirthday(draft.basics.birthday)) {
-    add("basics", "生日需要是有效的四位月日。");
-  }
-  if (!draft.basics.openingTemplateId.trim()) {
-    add("basics", "请选择 Opening 模板。");
-  }
-  if (!draft.basics.openingTitle.trim() || !draft.basics.openingPrompt.trim()) {
-    add("basics", "请补全 Opening 标题和引导文案。");
+    add("basics", "请选一个有效的生日月日。");
   }
 
   if (
     draft.unlock.kind === "find-gift" &&
     !FIND_GIFT_TARGET_IDS.includes(draft.unlock.targetId)
   ) {
-    add("unlock", "请选择有效的藏礼物位置。");
+    add("unlock", "先选一个藏礼物的位置吧。");
   }
 
-  const messageLength = draft.card.message.trim().length;
-  if (!draft.card.templateId.trim()) {
-    add("card", "请选择生日卡模板。");
-  }
-  if (messageLength < 10 || messageLength > 240) {
-    add("card", "生日祝福需要 10–240 个字。");
-  }
-  if (!draft.card.signature.trim()) {
-    add("card", "请填写生日卡署名。");
-  }
-
-  if (!draft.scrapbook.templateId.trim() || !draft.scrapbook.title.trim()) {
-    add("scrapbook", "请选择 Scrapbook 模板并填写标题。");
-  }
-  if (draft.scrapbook.slots.length < 1 || draft.scrapbook.slots.length > 3) {
-    add("scrapbook", "Scrapbook 需要保留 1–3 个照片位。");
-  }
-  if (!draft.scrapbook.slots.some((slot) => Boolean(slot.imageUrl?.trim()))) {
-    add("scrapbook", "请至少上传 1 张照片，最多 3 张。");
-  }
-  if (draft.scrapbook.slots.some((slot) => slot.caption.trim().length > 30)) {
-    add("scrapbook", "每张照片的说明不能超过 30 个字。");
+  if (draft.memoryKind === "card") {
+    const messageLength = draft.card.message.trim().length;
+    if (!draft.card.templateId.trim()) {
+      add("memory", "先选一张贺卡样式吧。");
+    }
+    if (messageLength < 10 || messageLength > 200) {
+      add("memory", "想说的话请写在 10–200 个字之间。");
+    }
+    if (!draft.card.signature.trim()) {
+      add("memory", "别忘了留下署名。");
+    }
+  } else {
+    const expectedSlots = SCRAPBOOK_TEMPLATE_SLOT_COUNTS[draft.scrapbook.templateId];
+    if (!expectedSlots) {
+      add("memory", "先选一个手帐版式吧。");
+    } else if (draft.scrapbook.slots.length !== expectedSlots) {
+      add("memory", `这个版式需要放入 ${expectedSlots} 张照片。`);
+    }
+    if (draft.scrapbook.slots.some((slot) => !slot.imageUrl?.trim())) {
+      add("memory", `请为这个版式放入 ${expectedSlots ?? 1} 张照片。`);
+    }
+    if (draft.scrapbook.description.trim().length > 20) {
+      add("memory", "这一句话不要超过 20 个字。");
+    }
   }
 
   const giftTitleLength = draft.gift.title.trim().length;
   if (giftTitleLength < 2 || giftTitleLength > 40) {
-    add("gift", "礼物名称需要 2–40 个字。");
+    add("gift", "礼物名称请写在 2–40 个字之间。");
   }
   if (draft.gift.description.trim().length > 120) {
-    add("gift", "礼物描述不能超过 120 个字。");
+    add("gift", "补充的话不要超过 120 个字。");
   }
   if (!isHttpsUrl(draft.gift.externalUrl.trim())) {
-    add("gift", "礼物链接必须是有效的 HTTPS 地址。");
+    add("gift", "请填写有效的 HTTPS 礼物链接。");
   }
 
   return errors;
@@ -144,6 +138,8 @@ export function getFirstIncompleteSenderStep(
 
 function toUnlockConfig(draft: SenderDraft): UnlockConfig {
   switch (draft.unlock.kind) {
+    case "none":
+      return { kind: "none" };
     case "rps":
       return { kind: "rps" };
     case "find-gift":
@@ -152,11 +148,8 @@ function toUnlockConfig(draft: SenderDraft): UnlockConfig {
         sceneId: "cozy-room",
         targetId: draft.unlock.targetId,
       };
-    case "birthday-password":
-      return {
-        kind: "birthday-password",
-        answer: draft.basics.birthday,
-      };
+    case "blow-candles":
+      return { kind: "blow-candles" };
   }
 }
 
@@ -172,6 +165,25 @@ export function senderDraftToPreview(
 
   const recipientName = draft.basics.recipientName.trim();
   const senderName = draft.basics.senderName.trim();
+  const memory = draft.memoryKind === "card"
+    ? {
+        kind: "card" as const,
+        card: {
+          templateId: draft.card.templateId,
+          message: draft.card.message.trim(),
+          signature: draft.card.signature.trim(),
+        },
+      }
+    : {
+        kind: "scrapbook" as const,
+        scrapbook: {
+          templateId: draft.scrapbook.templateId,
+          description: draft.scrapbook.description.trim(),
+          slots: draft.scrapbook.slots.map((slot) => ({
+            ...slot,
+          })),
+        },
+      };
   const preview: SurprisePreview = {
     mode: "preview",
     draftId: draft.draftId,
@@ -179,32 +191,22 @@ export function senderDraftToPreview(
     sender: { displayName: senderName },
     birthday: draft.basics.birthday,
     opening: {
-      templateId: draft.basics.openingTemplateId,
-      title: draft.basics.openingTitle.trim(),
-      prompt: draft.basics.openingPrompt.trim(),
+      templateId: "warm-letter",
+      title: `${recipientName}，生日快乐！`,
+      prompt: draft.unlock.kind === "none"
+        ? `${senderName} 留了一段想对你说的话，还有一份小礼物。`
+        : `${senderName} 留了一段想对你说的话，还有一份小礼物，等你亲手打开。`,
     },
     unlock: toUnlockConfig(draft),
-    card: {
-      templateId: draft.card.templateId,
-      message: draft.card.message.trim(),
-      signature: draft.card.signature.trim(),
-    },
-    scrapbook: {
-      templateId: draft.scrapbook.templateId,
-      title: draft.scrapbook.title.trim(),
-      slots: draft.scrapbook.slots.map((slot) => ({
-        ...slot,
-        caption: slot.caption.trim(),
-      })),
-    },
+    memory,
     gift: {
       title: draft.gift.title.trim(),
       description: draft.gift.description.trim(),
       externalUrl: draft.gift.externalUrl.trim(),
     },
     share: {
-      title: `给 ${recipientName} 的生日惊喜`,
-      text: `${senderName} 为 ${recipientName} 准备了一份生日惊喜。`,
+      title: `${recipientName} 的生日惊喜`,
+      text: `${senderName} 准备了一份生日惊喜，想和你分享。`,
     },
   };
 
