@@ -1635,10 +1635,6 @@ export function SenderBuilder({
           {currentStep === "publish" ? (
             <>
               <section className={styles.summaryCard} aria-label="惊喜内容摘要">
-                <div className={styles.summaryTop}>
-                  <span className={styles.summaryBadge}>本地预览</span>
-                  <span>本地草稿</span>
-                </div>
                 <h2>{draft.basics.recipientName || "你"}，生日快乐！</h2>
                 <p>给 {draft.basics.recipientName} · 来自 {draft.basics.senderName}</p>
                 <dl>
@@ -1655,9 +1651,6 @@ export function SenderBuilder({
                 </dl>
               </section>
               <TadaMessage message="预览会带你看完整流程，不用走完也能回来继续修改。" />
-              <p className={styles.honestPreviewNote}>
-                现在还是本地预览，公开分享链接会在正式发布时再生成。
-              </p>
             </>
           ) : null}
         </section>

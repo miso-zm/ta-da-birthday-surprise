@@ -670,8 +670,7 @@
 }
 
 .notice,
-.errorPanel,
-.honestPreviewNote {
+.errorPanel {
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: var(--font-weight-medium);
@@ -1148,21 +1147,8 @@
   border-bottom-left-radius: 10px;
 }
 
-.summaryTop {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: var(--font-weight-regular);
-}
-
-.summaryBadge {
-  color: var(--coral-dark);
-}
-
 .summaryCard h2 {
-  margin: 18px 0 8px;
+  margin: 0 0 8px;
   font-size: 25px;
   line-height: 1.2;
   letter-spacing: -0.035em;
@@ -1199,13 +1185,6 @@
   margin: 0;
   font-weight: var(--font-weight-medium);
   text-align: right;
-}
-
-.honestPreviewNote {
-  margin: 0;
-  padding: 13px 15px;
-  background: color-mix(in srgb, var(--sky) 22%, var(--paper));
-  color: var(--muted);
 }
 
 .footer {
