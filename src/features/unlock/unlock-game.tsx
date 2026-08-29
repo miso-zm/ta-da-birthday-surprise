@@ -373,7 +373,7 @@ function FindGiftSuccessState({
         </div>
       </div>
       <ActionButton disabled={disabled} onClick={onContinue}>
-        {disabled ? "正在继续…" : "继续看生日心意"}
+        {disabled ? "正在继续…" : "拆开礼物"}
       </ActionButton>
     </div>
   );
