@@ -406,11 +406,11 @@
 
 .successPanel {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: 124px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 12px;
-  padding: 10px;
+  padding: 8px;
   border: 1px solid color-mix(in srgb, var(--color-mint) 58%, var(--ui-line));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-mint) 14%, var(--paper));
@@ -418,11 +418,12 @@
 }
 
 .successArt {
-  width: 112px;
-  height: 94px;
+  width: 124px;
+  height: 82px;
   display: block;
   border-radius: var(--radius-sm);
   object-fit: cover;
+  object-position: center 48%;
 }
 
 .successPanel h3,
@@ -432,16 +433,18 @@
 
 .successPanel h3 {
   color: color-mix(in srgb, var(--color-mint) 58%, var(--ink));
-  font-size: 21px;
+  font-size: 20px;
   font-weight: var(--font-weight-bold);
 }
 
 .successPanel p {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: var(--font-weight-regular);
-  line-height: 1.45;
+  line-height: 1.35;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
 }
 
 .blowCandles,
@@ -813,8 +816,8 @@
 @media (max-width: 370px) {
   .feedback { grid-template-columns: 46px minmax(0, 1fr); }
   .tadaThumb { width: 46px; height: 46px; }
-  .successPanel { grid-template-columns: 94px minmax(0, 1fr); }
-  .successArt { width: 94px; height: 82px; }
+  .successPanel { grid-template-columns: 108px minmax(0, 1fr); gap: 8px; }
+  .successArt { width: 108px; height: 74px; }
   .blowCandles,
   .blowCandlesSuccess { margin-top: 8px; }
   .candleScene { margin-top: 9px; }

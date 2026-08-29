@@ -344,9 +344,9 @@ function FindGiftSuccessState({
   const target = giftTargets.find((item) => item.id === config.targetId);
   if (!target) return null;
   const successMessage: Record<FindGiftConfig["targetId"], string> = {
-    "sofa-box": "绿礼盒被你找到了，下一站，拆开生日小惊喜！",
-    "plant-box": "黄礼盒被你找到了，下一站，拆开生日小惊喜！",
-    "rug-box": "粉礼盒被你找到了，下一站，拆开生日小惊喜！",
+    "sofa-box": "绿礼盒找到了，下一站拆惊喜！",
+    "plant-box": "黄礼盒找到了，下一站拆惊喜！",
+    "rug-box": "粉礼盒找到了，下一站拆惊喜！",
   };
 
   return (
@@ -362,8 +362,8 @@ function FindGiftSuccessState({
       />
       <div className={styles.successPanel} role="status">
         <img
-          src="/assets/find-gift/tada-found-success.png"
-          alt="Tada 从打开的礼物盒里举手庆祝"
+          src="/assets/gift/tada-gift-reveal-complete-v2.png"
+          alt="Tada 从打开的礼盒里探出身来庆祝"
           className={styles.successArt}
           onError={() => onRuntimeIssue("find-gift-success-asset-failed")}
         />
