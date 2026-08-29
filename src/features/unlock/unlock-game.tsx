@@ -85,10 +85,21 @@ function UnlockSession({ config, onComplete, onFallback }: UnlockGameProps) {
   const issue = getConfigIssue(config) ?? runtimeIssue;
 
   const complete = () => {
-    if (completed.current || solvedResult === null) return;
+    if (solvedResult === null) return;
+    completeWithResult(solvedResult);
+  };
+
+  const completeWithResult = ({
+    attempts,
+    usedFallback = false,
+  }: {
+    attempts: number;
+    usedFallback?: boolean;
+  }) => {
+    if (completed.current) return;
     completed.current = true;
     setIsLeaving(true);
-    onComplete({ kind: config.kind, ...solvedResult });
+    onComplete({ kind: config.kind, attempts, usedFallback });
   };
 
   const solved = (attempts: number, usedFallback = false) => {
@@ -125,7 +136,11 @@ function UnlockSession({ config, onComplete, onFallback }: UnlockGameProps) {
   ) : config.kind === "find-gift" ? (
     <FindGiftGame config={config} onSolved={solved} onRuntimeIssue={setRuntimeIssue} />
   ) : config.kind === "rps" ? (
-    <RpsGame config={config} onSolved={solved} onRuntimeIssue={setRuntimeIssue} />
+    <RpsGame
+      config={config}
+      onCompleteAfterWin={(attempts) => completeWithResult({ attempts })}
+      onRuntimeIssue={setRuntimeIssue}
+    />
   ) : (
     <BlowCandlesGame config={config} onSolved={solved} onRuntimeIssue={setRuntimeIssue} />
   );
@@ -405,15 +420,20 @@ function RpsHand({ choice, onError }: { choice: RpsChoice; onError: () => void }
 }
 
 function RpsGame({
-  onSolved,
+  onCompleteAfterWin,
   onRuntimeIssue,
-}: GameCallbacks & { config: RockPaperScissorsConfig }) {
+}: Omit<GameCallbacks, "onSolved"> & {
+  config: RockPaperScissorsConfig;
+  onCompleteAfterWin: (attempts: number) => void;
+}) {
   const [rounds, setRounds] = useState(0);
   const [selected, setSelected] = useState<RpsChoice | null>(null);
   const [displayChoice, setDisplayChoice] = useState<RpsChoice>("scissors");
   const [phase, setPhase] = useState<"selecting" | "cycling" | "revealing" | "result">("selecting");
   const [result, setResult] = useState<{ player: RpsChoice; opponent: RpsChoice; outcome: RpsOutcome } | null>(null);
+  const [isContinuing, setIsContinuing] = useState(false);
   const timers = useRef<number[]>([]);
+  const continuedAfterWin = useRef(false);
   const prefersReducedMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotionPreference, getServerReducedMotionPreference);
 
   useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
@@ -440,7 +460,13 @@ function RpsGame({
   };
 
   const retry = () => { setSelected(null); setResult(null); setPhase("selecting"); };
-  const resultCopy = result?.outcome === "win" ? "你赢啦！点击打开惊喜" : result?.outcome === "draw" ? "平局耶！重新选一张吧" : "差一点，再试一次";
+  const continueAfterWin = () => {
+    if (continuedAfterWin.current || result?.outcome !== "win") return;
+    continuedAfterWin.current = true;
+    setIsContinuing(true);
+    onCompleteAfterWin(rounds);
+  };
+  const resultCopy = result?.outcome === "win" ? "你赢啦！点击继续" : result?.outcome === "draw" ? "平局耶！重新选一张吧" : "差一点，再试一次";
   const retryCopy = result?.outcome === "draw" ? "平局耶！再来一次" : "差一点，再试一次";
 
   return (
@@ -461,7 +487,7 @@ function RpsGame({
         {rpsOrder.map((choice) => <button key={choice} type="button" disabled={phase !== "selecting"} onClick={() => setSelected(choice)} aria-pressed={selected === choice} className={`${styles.rpsChoice} ${(phase === "cycling" ? displayChoice : selected) === choice ? styles.rpsChoiceSelected : ""}`}><RpsHand choice={choice} onError={() => onRuntimeIssue("rps-artwork-failed")} /><span>{rpsLabels[choice]}</span></button>)}
       </div>
       <p className={`${styles.rpsStatus} ${phase === "result" ? styles.rpsStatusResult : ""}`} aria-live="polite">{phase === "cycling" ? "出拳中…" : phase === "revealing" ? "Tada 要翻牌啦…" : phase === "result" ? resultCopy : selected ? `你选了${rpsLabels[selected]}，准备好就出拳` : "先选一张牌"}</p>
-      {phase === "selecting" ? <button type="button" disabled={!selected} onClick={confirm} className={styles.rpsAction}>确定出拳</button> : phase === "result" && result?.outcome !== "win" ? <button type="button" onClick={retry} className={styles.rpsAction}>{retryCopy}</button> : phase === "result" ? <button type="button" onClick={() => onSolved(rounds)} className={styles.rpsAction}>打开惊喜</button> : null}
+      {phase === "selecting" ? <button type="button" disabled={!selected} onClick={confirm} className={styles.rpsAction}>确定出拳</button> : phase === "result" && result?.outcome !== "win" ? <button type="button" onClick={retry} className={styles.rpsAction}>{retryCopy}</button> : phase === "result" ? <button type="button" disabled={isContinuing} onClick={continueAfterWin} className={styles.rpsAction}>{isContinuing ? "正在继续…" : "点击继续"}</button> : null}
     </div>
   );
 }
