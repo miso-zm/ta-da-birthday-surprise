@@ -1612,8 +1612,10 @@
 .previewDescription {
   position: absolute;
   z-index: 7;
-  display: grid;
-  place-items: center;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   color: var(--ink);
   font-size: 16px;
@@ -1623,11 +1625,10 @@
   white-space: normal;
   overflow-wrap: anywhere;
   overflow: hidden;
-  max-height: 3.1em;
   pointer-events: none;
 }
 
-.scrapbookCanvas1 .previewDescription { left: 10.6%; top: 73.3%; width: 79.7%; height: 21.5%; padding: 3.8% 6%; }
+.scrapbookCanvas1 .previewDescription { left: 10.6%; top: 73.3%; width: 79.7%; height: 21.5%; padding: 3.8% 6%; font-size: 15px; }
 .scrapbookCanvas2 .previewDescription { left: 10.5%; top: 80.5%; width: 79.4%; height: 15.2%; padding: 2.4% 6%; font-size: 15px; }
 .scrapbookCanvas3 .previewDescription { left: 7.7%; top: 76.5%; width: 82.3%; height: 19.9%; padding: 3.5% 6%; font-size: 15px; }
 

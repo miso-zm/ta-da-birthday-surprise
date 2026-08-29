@@ -55,8 +55,10 @@
 .description {
   position: absolute;
   z-index: 7;
-  display: grid;
-  place-items: center;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
   color: var(--ink);
   font-weight: 500;
@@ -65,7 +67,6 @@
   white-space: normal;
   overflow-wrap: anywhere;
   overflow: hidden;
-  max-height: 3.1em;
   pointer-events: none;
 }
 
@@ -75,7 +76,7 @@
   width: 79.7%;
   height: 21.5%;
   padding: 3.8% 6%;
-  font-size: clamp(14px, 4.1vw, 16px);
+  font-size: clamp(14px, 3.85vw, 15px);
 }
 
 .description2 {
