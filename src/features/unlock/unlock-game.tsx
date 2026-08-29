@@ -20,6 +20,7 @@ import {
   isMicrophoneRequestActive,
   getRpsRound,
   type RpsChoice,
+  type RpsOutcome,
 } from "./unlock-logic";
 import styles from "./unlock-game.module.css";
 
@@ -129,7 +130,7 @@ function UnlockSession({ config, onComplete, onFallback }: UnlockGameProps) {
     <BlowCandlesGame config={config} onSolved={solved} onRuntimeIssue={setRuntimeIssue} />
   );
 
-  if (config.kind === "blow-candles") {
+  if (config.kind === "blow-candles" || config.kind === "rps") {
     return <section className="w-full px-1 py-2">{gameContent}</section>;
   }
 
@@ -381,58 +382,83 @@ const rpsLabels: Record<RpsChoice, string> = {
   paper: "布",
 };
 
+const rpsOrder: RpsChoice[] = ["rock", "scissors", "paper"];
+
+const rpsArtwork: Record<RpsChoice, string> = {
+  rock: "/assets/rps/rock.png",
+  scissors: "/assets/rps/scissors.png",
+  paper: "/assets/rps/paper.png",
+};
+
+const rpsSceneArtwork: Record<RpsOutcome | "waiting", string> = {
+  waiting: "/assets/rps/tada-card-back.png",
+  win: "/assets/rps/tada-card-win.png",
+  draw: "/assets/rps/tada-card-draw.png",
+  lose: "/assets/rps/tada-card-lose.png",
+};
+
+function RpsHand({ choice, onError }: { choice: RpsChoice; onError: () => void }) {
+  return <img src={rpsArtwork[choice]} alt="" className={styles.rpsHand} onError={onError} />;
+}
+
 function RpsGame({
   onSolved,
   onRuntimeIssue,
 }: GameCallbacks & { config: RockPaperScissorsConfig }) {
   const [rounds, setRounds] = useState(0);
-  const [feedback, setFeedback] = useState("选好后，Tada 会同时出拳。最晚第三轮就能过关。");
+  const [selected, setSelected] = useState<RpsChoice | null>(null);
+  const [displayChoice, setDisplayChoice] = useState<RpsChoice>("scissors");
+  const [phase, setPhase] = useState<"selecting" | "cycling" | "revealing" | "result">("selecting");
+  const [result, setResult] = useState<{ player: RpsChoice; opponent: RpsChoice; outcome: RpsOutcome } | null>(null);
+  const timers = useRef<number[]>([]);
+  const prefersReducedMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotionPreference, getServerReducedMotionPreference);
 
-  const play = (choice: RpsChoice) => {
+  useEffect(() => () => timers.current.forEach((timer) => window.clearTimeout(timer)), []);
+
+  const confirm = () => {
+    if (!selected || phase !== "selecting") return;
     try {
       const nextRound = rounds + 1;
-      const result = getRpsRound(choice, nextRound);
+      const nextResult = getRpsRound(selected, nextRound);
       setRounds(nextRound);
-      setFeedback(
-        `第 ${nextRound} 轮：你出了${rpsLabels[choice]}，Tada 出了${rpsLabels[result.opponent]}。${
-          result.outcome === "win"
-            ? "你赢了，惊喜打开啦！"
-            : result.outcome === "draw"
-              ? "这一轮平局，再来一次。"
-              : "这一轮 Tada 赢了，再试一次吧。"
-        }`,
-      );
-      if (result.outcome === "win") onSolved(nextRound);
+      if (prefersReducedMotion) {
+        setDisplayChoice(selected);
+        setResult({ player: selected, ...nextResult });
+        setPhase("result");
+        return;
+      }
+      setPhase("cycling");
+      [0, 110, 220, 350, 510].forEach((delay, index) => timers.current.push(window.setTimeout(() => setDisplayChoice(rpsOrder[index % rpsOrder.length]), delay)));
+      timers.current.push(window.setTimeout(() => { setDisplayChoice(selected); setPhase("revealing"); }, 650));
+      timers.current.push(window.setTimeout(() => { setResult({ player: selected, ...nextResult }); setPhase("result"); }, 980));
     } catch {
       onRuntimeIssue("rps-runtime-failed");
     }
   };
 
+  const retry = () => { setSelected(null); setResult(null); setPhase("selecting"); };
+  const resultCopy = result?.outcome === "win" ? "你赢啦！点击打开惊喜" : result?.outcome === "draw" ? "平局耶！重新选一张吧" : "差一点，再试一次";
+  const retryCopy = result?.outcome === "draw" ? "平局耶！再来一次" : "差一点，再试一次";
+
   return (
-    <div className="mt-4">
-      <h2 className="text-2xl font-bold text-[var(--ink)]">和 Tada 猜一拳</h2>
-      <p className="mt-2 text-sm font-semibold leading-6 text-[var(--muted)]">赢下一轮，就能打开这份生日惊喜。</p>
-      <fieldset className="mt-5">
-        <legend className="text-sm font-bold text-[var(--ink)]">请选择你的出招</legend>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {(Object.keys(rpsLabels) as RpsChoice[]).map((choice) => (
-            <button
-              key={choice}
-              type="button"
-              onClick={() => play(choice)}
-              className="min-h-20 rounded-[var(--radius-md)] border-0 bg-[var(--paper)] px-2 text-base font-bold text-[var(--ink)] shadow-[var(--shadow-card)] outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--coral)_24%,transparent)] active:translate-y-px active:shadow-none"
-            >
-              <span aria-hidden="true" className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--coral)] text-sm text-[var(--on-light)]">
-                {rpsLabels[choice].slice(0, 1)}
-              </span>
-              {rpsLabels[choice]}
-            </button>
-          ))}
+    <div className={styles.rpsGame}>
+      <p className={styles.rpsEyebrow}>面对面对决桌</p><h2>和 Tada 猜一拳</h2><p className={styles.rpsLead}>选一张，看看 Tada 会出什么</p>
+      <div className={styles.rpsDuel}>
+        <div className={`${styles.rpsOpponent} ${phase === "revealing" || phase === "result" ? styles.rpsOpponentRevealed : ""}`}>
+          <div className={styles.rpsCardFlip}>
+            <div className={`${styles.rpsCardFace} ${styles.rpsCardBack}`}><img src={rpsSceneArtwork.waiting} alt="Tada 手捧暗牌" onError={() => onRuntimeIssue("rps-artwork-failed")} /></div>
+            <div className={`${styles.rpsCardFace} ${styles.rpsCardFront}`}>
+              <img src={rpsSceneArtwork[result?.outcome ?? "draw"]} alt="" onError={() => onRuntimeIssue("rps-artwork-failed")} />
+              <div className={styles.rpsRevealContent}><RpsHand choice={result?.opponent ?? "rock"} onError={() => onRuntimeIssue("rps-artwork-failed")} /><strong>{rpsLabels[result?.opponent ?? "rock"]}</strong></div>
+            </div>
+          </div>
         </div>
-      </fieldset>
-      <TadaMessage mood={rounds > 0 ? "thinking" : "waiting"}>
-        <span aria-live="polite">{feedback}</span>
-      </TadaMessage>
+      </div>
+      <div className={`${styles.rpsChoices} ${phase === "cycling" ? styles.rpsCycling : ""}`} role="group" aria-label="选择你的出拳">
+        {rpsOrder.map((choice) => <button key={choice} type="button" disabled={phase !== "selecting"} onClick={() => setSelected(choice)} aria-pressed={selected === choice} className={`${styles.rpsChoice} ${(phase === "cycling" ? displayChoice : selected) === choice ? styles.rpsChoiceSelected : ""}`}><RpsHand choice={choice} onError={() => onRuntimeIssue("rps-artwork-failed")} /><span>{rpsLabels[choice]}</span></button>)}
+      </div>
+      <p className={`${styles.rpsStatus} ${phase === "result" ? styles.rpsStatusResult : ""}`} aria-live="polite">{phase === "cycling" ? "出拳中…" : phase === "revealing" ? "Tada 要翻牌啦…" : phase === "result" ? resultCopy : selected ? `你选了${rpsLabels[selected]}，准备好就出拳` : "先选一张牌"}</p>
+      {phase === "selecting" ? <button type="button" disabled={!selected} onClick={confirm} className={styles.rpsAction}>确定出拳</button> : phase === "result" && result?.outcome !== "win" ? <button type="button" onClick={retry} className={styles.rpsAction}>{retryCopy}</button> : phase === "result" ? <button type="button" onClick={() => onSolved(rounds)} className={styles.rpsAction}>打开惊喜</button> : null}
     </div>
   );
 }
