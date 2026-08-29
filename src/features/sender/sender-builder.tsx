@@ -1,5 +1,6 @@
 "use client";
 
+import NextImage from "next/image";
 import {
   useEffect,
   useId,
@@ -695,7 +696,7 @@ export function SenderBuilder({
     initialDraft ?? createDefaultSenderDraft(),
   );
   const [currentStep, setCurrentStep] = useState<SenderStep>("basics");
-  const [screen, setScreen] = useState<"loading" | "recover" | "edit">("loading");
+  const [screen, setScreen] = useState<"loading" | "welcome" | "recover" | "edit">("loading");
   const [recoverableDraft, setRecoverableDraft] = useState<SenderDraft | null>(null);
   const [loadMessage, setLoadMessage] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -731,8 +732,7 @@ export function SenderBuilder({
     const storage = getBrowserDraftStorage();
     if (!storage) {
       setLoadMessage("当前浏览器无法保存草稿，但你仍然可以继续完成预览。");
-      setScreen("edit");
-      initialized.current = true;
+      setScreen("welcome");
       return;
     }
 
@@ -743,8 +743,7 @@ export function SenderBuilder({
     } else {
       if (result.status === "invalid") setLoadMessage(result.reason);
       setDraft(createDefaultSenderDraft());
-      setScreen("edit");
-      initialized.current = true;
+      setScreen("welcome");
     }
   }, [initialDraft]);
 
@@ -812,6 +811,13 @@ export function SenderBuilder({
     setDraft(createDefaultSenderDraft());
     setCurrentStep("basics");
     setRecoverableDraft(null);
+    setScreen("edit");
+    setSaveState("idle");
+    initialized.current = true;
+  }
+
+  function startCreating() {
+    setCurrentStep("basics");
     setScreen("edit");
     setSaveState("idle");
     initialized.current = true;
@@ -1102,6 +1108,48 @@ export function SenderBuilder({
           </div>
           <p>正在准备你的惊喜…</p>
         </div>
+      </main>
+    );
+  }
+
+  if (screen === "welcome") {
+    return (
+      <main className={styles.welcomeScreen}>
+        <section className={styles.welcomeFrame} aria-labelledby="sender-welcome-title">
+          <NextImage
+            src="/assets/sender/sender-welcome-bg-v1.png"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 430px) 100vw, 430px"
+            className={styles.welcomeBackground}
+          />
+
+          <div className={styles.srOnly}>
+            <h1 id="sender-welcome-title">准备一份心意，给 TA 一个惊喜</h1>
+            <p>为重要的人制作一份超有仪式感的生日惊喜。</p>
+          </div>
+
+          <button
+            type="button"
+            className={styles.welcomeButton}
+            onClick={startCreating}
+            aria-label="开始准备生日惊喜"
+          >
+            <NextImage
+              src="/assets/sender/sender-welcome-button-v1.png"
+              alt=""
+              fill
+              priority
+              sizes="270px"
+              className={styles.welcomeButtonArtwork}
+            />
+            <span className={styles.welcomeStarField} aria-hidden="true">
+              <span className={styles.welcomeStarSmall} />
+              <span className={styles.welcomeStarLarge} />
+            </span>
+          </button>
+        </section>
       </main>
     );
   }
