@@ -1,3 +1,21 @@
+.reveal {
+  width: 100%;
+  padding: 0.5rem 0.25rem;
+}
+
+.preopen {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.preopenHero {
+  display: block;
+  width: min(100%, 22rem);
+  max-height: min(58dvh, 31rem);
+  margin: 0 auto;
+  object-fit: contain;
+}
+
 .scene,
 .completeScene {
   position: relative;

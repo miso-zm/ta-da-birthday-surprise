@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GiftContent } from "@/lib/surprise-contract";
 import { isHttpsUrl } from "@/lib/surprise-contract";
-import { PrimaryButton, StageCard } from "@/features/shared/placeholders";
+import { PrimaryButton } from "@/features/shared/placeholders";
 import styles from "./gift-reveal.module.css";
 
 type GiftRevealProps = {
@@ -44,8 +44,17 @@ export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
   };
 
   return (
-    <StageCard label="最后一份小惊喜">
-      {!revealed ? (
+    <section className={styles.reveal}>
+      {phase === "closed" ? (
+        <div className={styles.preopen}>
+          <img
+            src="/assets/gift/gift-preopen-hero-v1.png"
+            alt="Tada 站在一份珊瑚色礼盒旁，把礼物送到啦"
+            className={styles.preopenHero}
+          />
+          <PrimaryButton onClick={reveal}>拆开礼物</PrimaryButton>
+        </div>
+      ) : !revealed ? (
         <>
           <div
             className={styles.scene}
@@ -72,7 +81,6 @@ export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
               className={styles.tadaPop}
             />
           </div>
-          <h1 className="mt-7 text-center text-3xl font-bold tracking-[-0.04em]">还有一份小礼物</h1>
           <PrimaryButton onClick={reveal} disabled={opening}>
             {opening ? "正在拆开…" : "拆开礼物"}
           </PrimaryButton>
@@ -107,6 +115,6 @@ export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
           <PrimaryButton onClick={onContinue}>收好这份惊喜</PrimaryButton>
         </>
       )}
-    </StageCard>
+    </section>
   );
 }
