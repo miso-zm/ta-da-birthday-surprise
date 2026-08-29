@@ -1,0 +1,59 @@
+:root {
+  --font-rounded: "GenSenMaruGothic TW TTF", "GenSenMaruGothicTW-Regular-TTF",
+    "Resource Han Rounded CN", ui-rounded, "SF Pro Rounded", "PingFang SC", sans-serif;
+  --font-handwritten: "Klee One", "HanziPen SC", "STKaiti", "KaiTi", cursive;
+  --font-weight-regular: 500;
+  --font-weight-medium: 600;
+  --font-weight-bold: 700;
+
+  --color-coral: #fa907b;
+  --color-coral-action: #fa907b;
+  --color-yellow: #ffbe3d;
+  --color-mint: #7ed9c8;
+  --color-sky: #a8d8ff;
+  --color-lilac: #c7b1ff;
+  --color-ink-strong: #2b2116;
+  --color-ink: #5b4636;
+  --color-ink-muted: #9a8774;
+  --color-line: #f3e9da;
+  --color-canvas: #f8f4ee;
+  --color-surface: #ffffff;
+  --color-paper-warm: #fffaf2;
+  --color-paper-aged: #f8efdf;
+  --color-pencil: #8a6a52;
+  --color-on-light: #2b2116;
+  --color-on-dark: #fffdf9;
+  --color-success: #6fcf97;
+  --color-warning: #ffc36b;
+  --color-danger: #ff686b;
+  --color-info: #8ab4f8;
+
+  --page: var(--color-canvas);
+  --paper: var(--color-surface);
+  --paper-warm: var(--color-paper-warm);
+  --paper-aged: var(--color-paper-aged);
+  --coral: var(--color-coral);
+  --coral-dark: var(--color-coral);
+  --coral-action: var(--color-coral-action);
+  --ink: var(--color-ink-strong);
+  --line: var(--color-ink);
+  --ui-line: var(--color-line);
+  --pencil: var(--color-pencil);
+  --on-light: var(--color-on-light);
+  --on-dark: var(--color-on-dark);
+  --muted: var(--color-ink-muted);
+  --butter: var(--color-yellow);
+  --pink: #ffd4d0;
+  --sage: var(--color-mint);
+  --sky: var(--color-sky);
+  --lilac: var(--color-lilac);
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-round: 999px;
+  --shadow-card: 0 10px 30px rgb(91 70 54 / 5%);
+  --shadow-raised: 0 16px 42px rgb(91 70 54 / 8%);
+  --shadow-paper: 0 12px 28px rgb(91 70 54 / 7%);
+  --shadow-pressed: 0 4px 12px rgb(91 70 54 / 10%);
+}

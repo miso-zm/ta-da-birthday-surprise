@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "plugins": []
+  },
+  "include": [
+    "./unlock-game.tsx",
+    "./unlock-logic.ts"
+  ]
+}
+

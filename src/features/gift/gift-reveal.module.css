@@ -1,0 +1,241 @@
+.reveal {
+  width: 100%;
+  padding: 0.25rem;
+}
+
+.preopen,
+.receipt {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.preopenHero {
+  display: block;
+  width: min(100%, 22rem);
+  max-height: min(58dvh, 31rem);
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.receipt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  isolation: isolate;
+}
+
+.confettiBurst {
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confettiPiece {
+  position: absolute;
+  top: 0;
+  left: var(--confetti-left);
+  width: var(--confetti-width);
+  height: var(--confetti-height);
+  border-radius: 3px;
+  background: currentColor;
+  color: var(--confetti-color);
+  opacity: 0;
+  transform-origin: center;
+  animation: gift-confetti-fall var(--confetti-duration) linear var(--confetti-delay) both;
+}
+
+.confettiPiece[data-shape="dot"] {
+  border-radius: 50%;
+}
+
+.confettiPiece[data-shape="star"] {
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 56%, 79% 94%, 50% 72%, 21% 94%, 32% 56%, 2% 35%, 39% 35%);
+}
+
+@keyframes gift-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, var(--confetti-start-y), 0) rotate(0deg) scale(0.86);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate3d(-50%, calc(var(--confetti-start-y) + 9vh), 0) rotate(0deg) scale(0.94);
+  }
+
+  52% {
+    opacity: 0.96;
+    transform: translate3d(calc(-50% + var(--confetti-mid-x)), var(--confetti-mid-y), 0) rotate(var(--confetti-mid-turn)) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-50% + var(--confetti-end-x)), var(--confetti-end-y), 0) rotate(var(--confetti-end-turn)) scale(0.94);
+  }
+}
+
+.title {
+  width: min(85vw, 21rem);
+  max-width: 100%;
+  margin: 0 auto;
+  line-height: 0;
+}
+
+.receiptTitle {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.receiptHero {
+  display: block;
+  width: min(100%, 22.5rem);
+  max-height: min(38dvh, 20.5rem);
+  margin: 1rem auto 0.85rem;
+  object-fit: contain;
+}
+
+.linkSection {
+  width: 100%;
+}
+
+.linkLabel {
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.4;
+}
+
+.platformCard {
+  display: grid;
+  min-height: 4.75rem;
+  grid-template-columns: 3rem minmax(0, 1fr) 1.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+a.platformCard:hover {
+  border-color: color-mix(in srgb, var(--coral) 45%, var(--ui-line));
+}
+
+a.platformCard:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+a.platformCard:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--coral) 45%, transparent);
+  outline-offset: 3px;
+}
+
+.platformIcon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--coral) 14%, var(--paper));
+  color: var(--coral);
+}
+
+.platformIcon[data-platform="jd"] {
+  background: color-mix(in srgb, var(--butter) 20%, var(--paper));
+  color: #b26d12;
+}
+
+.platformIcon[data-platform="wechat-shop"] {
+  background: color-mix(in srgb, var(--sage) 18%, var(--paper));
+  color: #3f8f7d;
+}
+
+.platformIcon[data-platform="generic"] {
+  background: var(--paper-warm);
+  color: var(--pencil);
+}
+
+.platformIcon svg {
+  width: 1.65rem;
+  height: 1.65rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.platformText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.platformText strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platformText span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrowIcon {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.arrowIcon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-height: 740px) {
+  .receiptHero {
+    max-height: 16rem;
+    margin-top: 0.65rem;
+  }
+
+  .platformCard {
+    min-height: 4.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confettiBurst {
+    display: none;
+  }
+
+  .platformCard {
+    transition: none;
+  }
+}

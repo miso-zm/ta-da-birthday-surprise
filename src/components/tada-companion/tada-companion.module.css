@@ -1,0 +1,8 @@
+.root {
+  display: block;
+  flex: none;
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
