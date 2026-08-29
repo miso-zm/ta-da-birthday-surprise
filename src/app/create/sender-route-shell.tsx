@@ -32,8 +32,6 @@ export function SenderRouteShell() {
         latestDraft.current = draft;
         setPreview(nextPreview);
       }}
-      onExit={() => window.history.back()}
     />
   );
 }
-

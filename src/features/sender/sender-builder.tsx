@@ -182,7 +182,6 @@ export type SenderBuilderProps = {
   initialDraft?: SenderDraft;
   onDraftChange?: (draft: SenderDraft) => void;
   onPreview: (preview: SurprisePreview, draft: SenderDraft) => void;
-  onExit?: () => void;
 };
 
 function stepIndex(step: SenderStep): number {
@@ -689,7 +688,6 @@ export function SenderBuilder({
   initialDraft,
   onDraftChange,
   onPreview,
-  onExit,
 }: SenderBuilderProps) {
   const [draft, setDraft] = useState<SenderDraft>(() =>
     initialDraft ?? createDefaultSenderDraft(),
@@ -832,7 +830,15 @@ export function SenderBuilder({
       return;
     }
     if (currentIndex === 0) {
-      onExit?.();
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      onDraftChangeRef.current?.(draft);
+      const storage = getBrowserDraftStorage();
+      if (storage) {
+        const result = saveSenderDraft(storage, draft);
+        setSaveState(result.ok ? "saved" : "error");
+        setSaveError(result.ok ? "" : result.reason);
+      }
+      setScreen("welcome");
       return;
     }
     const previousStep = SENDER_STEPS[currentIndex - 1];
