@@ -60,6 +60,8 @@ export const SCRAPBOOK_TEMPLATE_SLOT_COUNTS = {
   "three-photo": 3,
 } as const;
 
+export const SCRAPBOOK_DESCRIPTION_MAX_LENGTH = 34;
+
 export type ScrapbookTemplateId = keyof typeof SCRAPBOOK_TEMPLATE_SLOT_COUNTS;
 
 export type ScrapbookPhotoTransform = {

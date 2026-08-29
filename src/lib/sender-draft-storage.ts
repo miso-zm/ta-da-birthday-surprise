@@ -1,5 +1,6 @@
 import {
   FIND_GIFT_TARGET_IDS,
+  SCRAPBOOK_DESCRIPTION_MAX_LENGTH,
   SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
   type SenderDraft,
   type SenderUnlockDraft,
@@ -98,7 +99,9 @@ function migrateLegacySenderDraft(value: unknown): unknown {
       version: 2,
       scrapbook: {
         templateId,
-        description: isString(legacyDescription) ? legacyDescription.slice(0, 20) : "",
+        description: isString(legacyDescription)
+          ? legacyDescription.slice(0, SCRAPBOOK_DESCRIPTION_MAX_LENGTH)
+          : "",
         slots,
       },
     };

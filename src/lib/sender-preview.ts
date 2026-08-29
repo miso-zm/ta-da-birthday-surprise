@@ -1,5 +1,6 @@
 import {
   FIND_GIFT_TARGET_IDS,
+  SCRAPBOOK_DESCRIPTION_MAX_LENGTH,
   SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
   SENDER_STEPS,
   isHttpsUrl,
@@ -110,8 +111,8 @@ export function validateSenderDraft(
     if (draft.scrapbook.slots.some((slot) => !slot.imageUrl?.trim())) {
       add("memory", `请为这个版式放入 ${expectedSlots ?? 1} 张照片。`);
     }
-    if (draft.scrapbook.description.trim().length > 20) {
-      add("memory", "这一句话不要超过 20 个字。");
+    if (draft.scrapbook.description.trim().length > SCRAPBOOK_DESCRIPTION_MAX_LENGTH) {
+      add("memory", `这一句话不要超过 ${SCRAPBOOK_DESCRIPTION_MAX_LENGTH} 个字。`);
     }
   }
 

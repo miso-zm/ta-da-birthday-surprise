@@ -17,6 +17,7 @@ import {
 
 import {
   SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
+  SCRAPBOOK_DESCRIPTION_MAX_LENGTH,
   SENDER_STEPS,
   type FindGiftTargetId,
   type ScrapbookPhotoTransform,
@@ -1565,15 +1566,20 @@ export function SenderBuilder({
                 <span className={styles.noteTitle}>给这一页留一句话</span>
                 <textarea
                   value={draft.scrapbook.description}
-                  maxLength={20}
+                  maxLength={SCRAPBOOK_DESCRIPTION_MAX_LENGTH}
                   rows={2}
                   placeholder="例如：那天的风和笑声都还记得"
                   onChange={(event) => replaceDraft((previous) => ({
                     ...previous,
-                    scrapbook: { ...previous.scrapbook, description: event.target.value },
+                    scrapbook: {
+                      ...previous.scrapbook,
+                      description: event.target.value.replace(/[\r\n]+/g, ""),
+                    },
                   }))}
                 />
-                <small>{draft.scrapbook.description.length}/20，最多两行</small>
+                <small>
+                  {draft.scrapbook.description.length}/{SCRAPBOOK_DESCRIPTION_MAX_LENGTH}，最多两行
+                </small>
               </label>
             </>
           ) : null}
