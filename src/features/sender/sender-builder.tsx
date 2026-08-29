@@ -89,7 +89,7 @@ const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
 };
 
 const CARD_TEMPLATES = [
-  { id: "coral-birthday", name: "珊瑚生日卡", description: "热闹、温暖、适合好友" },
+  { id: "coral-birthday", name: "火漆信封卡", description: "热闹、温暖、适合好友" },
   { id: "cream-wishes", name: "奶油小花卡", description: "安静、柔软、留白更多" },
 ] as const;
 
