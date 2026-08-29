@@ -1221,6 +1221,485 @@
   margin-top: 10px;
 }
 
+/* D-040 / D-042: Step 3 scrapbook editor */
+.layoutSummary {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+}
+
+.layoutSummary h2,
+.layoutSummary p,
+.sectionHeading h2,
+.sectionKicker {
+  margin: 0;
+}
+
+.layoutSummary h2,
+.sectionHeading h2,
+.noteTitle {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.35;
+}
+
+.layoutSummary p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+.sectionKicker {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--coral-dark);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+.summaryAction,
+.sheetCloseButton,
+.cropSecondaryActions button,
+.cropSecondaryActions label,
+.slotError label {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.summaryAction {
+  padding: 0 10px;
+  color: var(--coral-dark);
+}
+
+.templateThumb {
+  position: relative;
+  width: 58px;
+  aspect-ratio: 3 / 4;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  background: var(--paper-warm);
+}
+
+.templateThumb .scrapbookCanvas {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.templateChoice .templateThumb {
+  width: 70px;
+}
+
+.photoPickerSection,
+.previewSection,
+.scrapbookNote {
+  display: grid;
+  gap: 12px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.missingCount,
+.completeCount {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+.missingCount {
+  background: color-mix(in srgb, var(--butter) 32%, var(--paper));
+  color: var(--ink);
+}
+
+.completeCount {
+  background: color-mix(in srgb, var(--sage) 24%, var(--paper));
+  color: var(--ink);
+}
+
+.photoSelectButton {
+  position: relative;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px dashed var(--coral);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--coral) 8%, var(--paper));
+  color: var(--coral-dark);
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.photoSelectButton input,
+.slotError input,
+.cropSecondaryActions input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.photoReadyHint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+}
+
+.slotStatusList {
+  display: grid;
+  gap: 8px;
+}
+
+.slotError {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--ui-line));
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.45;
+}
+
+.slotError label {
+  position: relative;
+  min-height: 38px;
+  padding: 0 10px;
+  color: var(--coral-dark);
+}
+
+.scrapbookPreview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--paper-warm);
+  box-shadow: var(--shadow-paper);
+}
+
+.scrapbookCanvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--paper-warm);
+}
+
+.scrapbookLayer,
+.maskedPhotoLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.scrapbookLayer {
+  display: block;
+  object-fit: cover;
+}
+
+.backgroundLayer { z-index: 1; }
+.maskedPhotoLayer { z-index: 2; }
+.framesLayer { z-index: 3; }
+.foregroundLayer { z-index: 4; }
+.outerLayer { z-index: 5; }
+.descriptionPaperLayer { z-index: 6; }
+
+.scrapbookPhotoContent {
+  position: absolute;
+  display: block;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.previewDescription {
+  position: absolute;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.55;
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
+.scrapbookCanvas1 .previewDescription { left: 10.6%; top: 73.3%; width: 79.7%; height: 21.5%; padding: 3.8% 6%; }
+.scrapbookCanvas2 .previewDescription { left: 10.5%; top: 80.5%; width: 79.4%; height: 15.2%; padding: 2.4% 6%; font-size: 15px; }
+.scrapbookCanvas3 .previewDescription { left: 7.7%; top: 76.5%; width: 82.3%; height: 19.9%; padding: 3.5% 6%; font-size: 15px; }
+
+.scrapbookPhotoHotspot {
+  position: absolute;
+  z-index: 8;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.scrapbookPhotoHotspot:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--coral) 72%, transparent);
+  outline-offset: -3px;
+}
+
+.scrapbookNote {
+  padding: 14px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
+.noteTitle {
+  display: block;
+  margin-top: -8px;
+}
+
+.scrapbookNote textarea {
+  width: 100%;
+  min-height: 74px;
+  padding: 12px 13px;
+  resize: none;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: var(--font-weight-regular);
+  line-height: 1.55;
+}
+
+.scrapbookNote textarea:focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 18%, transparent);
+}
+
+.scrapbookNote small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+.sheetBackdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-top: max(24px, env(safe-area-inset-top));
+  background: rgb(43 33 22 / 28%);
+}
+
+.bottomSheet {
+  width: min(100%, 430px);
+  max-height: min(82dvh, 720px);
+  overflow: hidden;
+  border: 1px solid var(--ui-line);
+  border-bottom: 0;
+  border-radius: 28px 28px 0 0;
+  background: var(--page);
+  box-shadow: 0 -8px 28px rgb(43 33 22 / 10%);
+}
+
+.sheetHeader {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--ui-line);
+  background: var(--paper);
+}
+
+.sheetHeader p,
+.sheetHeader h2 {
+  margin: 0;
+}
+
+.sheetHeader p {
+  color: var(--coral-dark);
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+}
+
+.sheetHeader h2 {
+  margin-top: 3px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.sheetCloseButton {
+  min-width: 54px;
+  padding: 0 10px;
+}
+
+.templateSheetList {
+  max-height: calc(min(82dvh, 720px) - 82px);
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 20px max(22px, env(safe-area-inset-bottom));
+}
+
+.templateConfirm {
+  display: grid;
+  gap: 16px;
+  padding: 20px max(20px, env(safe-area-inset-bottom));
+}
+
+.templateConfirm p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.6;
+}
+
+.templateConfirm > div {
+  display: grid;
+  gap: 10px;
+}
+
+.templateConfirm > div > button:first-child {
+  min-height: 46px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+}
+
+.cropSheetBody {
+  max-height: calc(min(82dvh, 720px) - 82px);
+  display: grid;
+  gap: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 20px max(20px, env(safe-area-inset-bottom));
+}
+
+.cropStage {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--paper-warm);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.cropStage2_2,
+.cropStage3_2,
+.cropStage3_3 {
+  aspect-ratio: 1 / 1;
+}
+
+.cropStage:active {
+  cursor: grabbing;
+}
+
+.cropStage img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.cropZoomControl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+}
+
+.cropZoomControl input {
+  width: 100%;
+  accent-color: var(--coral);
+}
+
+.cropZoomControl output {
+  color: var(--muted);
+  text-align: right;
+}
+
+.cropSecondaryActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cropSecondaryActions button,
+.cropSecondaryActions label {
+  position: relative;
+  width: 100%;
+}
+
+.cropError {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 @media (max-width: 370px) {
   .scrollArea {
     padding-inline: 16px;
@@ -1236,6 +1715,24 @@
 
   .photoSlot {
     grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .layoutSummary {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .layoutSummary .summaryAction {
+    grid-column: 1 / -1;
+  }
+
+  .templateThumb {
+    width: 52px;
+  }
+
+  .sheetHeader,
+  .templateSheetList,
+  .cropSheetBody {
+    padding-inline: 16px;
   }
 }
 

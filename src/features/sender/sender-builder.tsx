@@ -2,10 +2,14 @@
 
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
@@ -34,6 +38,28 @@ import {
 } from "../../lib/sender-draft-storage";
 
 import { MobilePicker } from "./mobile-picker";
+import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.png";
+import oneBackground from "./assets/d044/one/background.png";
+import oneDescriptionPaper from "./assets/d044/one/description-torn-paper.png";
+import oneForeground from "./assets/d044/one/foreground-tape-clips-stickers.png";
+import oneOuterDoodles from "./assets/d044/one/outer-doodles-stars.png";
+import onePhotoFrames from "./assets/d044/one/photo-frames.png";
+import onePhotoMask from "./assets/d044/one/photo-slot-1-mask.png";
+import threeBackground from "./assets/d044/three/background.png";
+import threeDescriptionPaper from "./assets/d044/three/description-torn-paper.png";
+import threeForeground from "./assets/d044/three/foreground-tape-clips-stickers.png";
+import threeOuterDoodles from "./assets/d044/three/outer-doodles-stars.png";
+import threePhotoFrames from "./assets/d044/three/photo-frames.png";
+import threePhotoMaskOne from "./assets/d044/three/photo-slot-1-mask.png";
+import threePhotoMaskTwo from "./assets/d044/three/photo-slot-2-mask.png";
+import threePhotoMaskThree from "./assets/d044/three/photo-slot-3-mask.png";
+import twoBackground from "./assets/d044/two/background.png";
+import twoDescriptionPaper from "./assets/d044/two/description-torn-paper.png";
+import twoForeground from "./assets/d044/two/foreground-tape-clips-stickers.png";
+import twoOuterDoodles from "./assets/d044/two/outer-doodles-stars.png";
+import twoPhotoFrames from "./assets/d044/two/photo-frames.png";
+import twoPhotoMaskOne from "./assets/d044/two/photo-slot-1-mask.png";
+import twoPhotoMaskTwo from "./assets/d044/two/photo-slot-2-mask.png";
 import styles from "./sender-builder.module.css";
 
 const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
@@ -65,10 +91,67 @@ const CARD_TEMPLATES = [
 ] as const;
 
 const SCRAPBOOK_TEMPLATES = [
-  { id: "one-photo", name: "一张主角", description: "一张大照片，留住最喜欢的一刻", count: 1 },
-  { id: "two-photo", name: "两格故事", description: "两张照片，上下记录一段回忆", count: 2 },
-  { id: "three-photo", name: "三段回忆", description: "一张大图加两张小图，像一页相册", count: 3 },
+  {
+    id: "one-photo",
+    name: "一张主角",
+    description: "居中大相纸，留住最喜欢的一刻",
+    count: 1,
+    assets: {
+      background: oneBackground,
+      frames: onePhotoFrames,
+      foreground: oneForeground,
+      outerDoodles: oneOuterDoodles,
+      descriptionPaper: oneDescriptionPaper,
+      masks: [onePhotoMask],
+    },
+  },
+  {
+    id: "two-photo",
+    name: "两格故事",
+    description: "上方横相纸 + 下方单张相纸",
+    count: 2,
+    assets: {
+      background: twoBackground,
+      frames: twoPhotoFrames,
+      foreground: twoForeground,
+      outerDoodles: twoOuterDoodles,
+      descriptionPaper: twoDescriptionPaper,
+      masks: [twoPhotoMaskOne, twoPhotoMaskTwo],
+    },
+  },
+  {
+    id: "three-photo",
+    name: "三段回忆",
+    description: "上方横相纸 + 下方两张方相纸",
+    count: 3,
+    assets: {
+      background: threeBackground,
+      frames: threePhotoFrames,
+      foreground: threeForeground,
+      outerDoodles: threeOuterDoodles,
+      descriptionPaper: threeDescriptionPaper,
+      masks: [threePhotoMaskOne, threePhotoMaskTwo, threePhotoMaskThree],
+    },
+  },
 ] as const;
+
+const SCRAPBOOK_SLOT_GEOMETRY: Record<
+  ScrapbookTemplateId,
+  ReadonlyArray<{ x: number; y: number; width: number; height: number }>
+> = {
+  "one-photo": [
+    { x: 16.1, y: 16.6, width: 67.5, height: 42.4 },
+  ],
+  "two-photo": [
+    { x: 15.9, y: 12.4, width: 69.2, height: 28.5 },
+    { x: 25.2, y: 46.9, width: 51.3, height: 29.6 },
+  ],
+  "three-photo": [
+    { x: 14.4, y: 8.4, width: 71.6, height: 33.5 },
+    { x: 13.3, y: 46.3, width: 33.9, height: 25.9 },
+    { x: 52.9, y: 46.3, width: 34.3, height: 25.8 },
+  ],
+};
 
 const GIFT_TARGETS: Array<{
   id: FindGiftTargetId;
@@ -82,9 +165,15 @@ const GIFT_TARGETS: Array<{
 ];
 
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
-const MAX_IMAGE_EDGE = 1200;
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type MemoryScreen = "choice" | "scrapbook";
+
+type CropDraft = {
+  index: number;
+  imageUrl: string;
+  transform: ScrapbookPhotoTransform;
+};
 
 export type SenderBuilderProps = {
   initialDraft?: SenderDraft;
@@ -131,21 +220,7 @@ function readImageFile(file: File): Promise<string> {
     reader.onload = () => {
       const image = new Image();
       image.onload = () => {
-        try {
-          const scale = Math.min(1, MAX_IMAGE_EDGE / Math.max(image.width, image.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(image.width * scale));
-          canvas.height = Math.max(1, Math.round(image.height * scale));
-          const context = canvas.getContext("2d");
-          if (!context) {
-            reject(new Error("当前浏览器暂时无法处理照片。"));
-            return;
-          }
-          context.drawImage(image, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL("image/jpeg", 0.78));
-        } catch {
-          reject(new Error("这张照片太大或格式特殊，请换一张试试。"));
-        }
+        resolve(String(reader.result));
       };
       image.onerror = () => reject(new Error("这张照片暂时无法读取，请换一张试试。"));
       image.src = String(reader.result);
@@ -274,11 +349,10 @@ function ScrapbookTemplateChoice({
       type="button"
       className={`${styles.templateChoice} ${selected ? styles.templateChoiceSelected : ""}`}
       aria-pressed={selected}
-      onClick={onClick}
+    onClick={onClick}
     >
-      <span className={`${styles.templateThumb} ${styles[`templateThumb${template.count}`]}`} aria-hidden="true">
-        {Array.from({ length: template.count }, (_, index) => <i key={index} />)}
-        <b />
+      <span className={styles.templateThumb} aria-hidden="true">
+        <ScrapbookCanvas templateId={template.id} />
       </span>
       <span className={styles.templateCopy}>
         <strong>{template.name}</strong>
@@ -290,6 +364,87 @@ function ScrapbookTemplateChoice({
         ) : null}
       </span>
     </button>
+  );
+}
+
+function BottomSheet({
+  eyebrow,
+  title,
+  onClose,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.requestAnimationFrame(() => {
+      dialogRef.current?.querySelector<HTMLElement>(
+        "button:not(:disabled), input:not(:disabled)",
+      )?.focus();
+    });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusable = Array.from(
+      dialogRef.current?.querySelectorAll<HTMLElement>(
+        "button:not(:disabled), input:not(:disabled), textarea:not(:disabled)",
+      ) ?? [],
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function handleBackdropClick(event: ReactMouseEvent<HTMLDivElement>) {
+    if (event.target === event.currentTarget) onClose();
+  }
+
+  return (
+    <div className={styles.sheetBackdrop} onMouseDown={handleBackdropClick}>
+      <div
+        ref={dialogRef}
+        className={styles.bottomSheet}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onKeyDown={handleKeyDown}
+      >
+        <header className={styles.sheetHeader}>
+          <div>
+            <p>{eyebrow}</p>
+            <h2 id={titleId}>{title}</h2>
+          </div>
+          <button type="button" className={styles.sheetCloseButton} onClick={onClose}>
+            关闭
+          </button>
+        </header>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -330,16 +485,20 @@ function photoTransformStyle(transform: ScrapbookPhotoTransform) {
   };
 }
 
-function PhotoCropEditor({
+function PhotoCropStage({
   imageUrl,
   index,
   transform,
   onChange,
+  onImageError,
+  slotCount,
 }: {
   imageUrl: string;
   index: number;
   transform: ScrapbookPhotoTransform;
   onChange: (transform: ScrapbookPhotoTransform) => void;
+  onImageError: () => void;
+  slotCount: number;
 }) {
   const drag = useRef<{
     pointerId: number;
@@ -361,8 +520,10 @@ function PhotoCropEditor({
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
+    const scale = Math.max(current.transform.scale, 1.05);
     onChange({
       ...current.transform,
+      scale,
       x: clamp(current.transform.x + (event.clientX - current.startX) / 90, -1, 1),
       y: clamp(current.transform.y + (event.clientY - current.startY) / 120, -1, 1),
     });
@@ -375,7 +536,7 @@ function PhotoCropEditor({
   return (
     <div className={styles.cropEditor}>
       <div
-        className={styles.photoPreview}
+        className={`${styles.cropStage} ${styles[`cropStage${slotCount}_${index + 1}`]}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={stopDragging}
@@ -383,10 +544,16 @@ function PhotoCropEditor({
         aria-label={`调整第 ${index + 1} 张照片：拖动画面移动主体`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview is not an optimized remote asset. */}
-        <img src={imageUrl} alt={`第 ${index + 1} 张回忆预览`} draggable={false} style={photoTransformStyle(transform)} />
-        <span className={styles.cropHint}>拖动调整主体</span>
+        <img
+          src={imageUrl}
+          alt={`第 ${index + 1} 张回忆裁切预览`}
+          draggable={false}
+          style={photoTransformStyle(transform)}
+          onError={onImageError}
+        />
+        <span className={styles.cropHint}>拖动照片，让主体留在框内</span>
       </div>
-      <label className={styles.zoomControl}>
+      <label className={styles.cropZoomControl}>
         <span>缩放</span>
         <input
           type="range"
@@ -394,12 +561,126 @@ function PhotoCropEditor({
           max="2.5"
           step="0.05"
           value={transform.scale}
+          aria-label="照片缩放"
           onChange={(event) => onChange({ ...transform, scale: Number(event.target.value) })}
         />
+        <output>{Math.round(transform.scale * 100)}%</output>
       </label>
-      <button type="button" className={styles.resetCropButton} onClick={() => onChange({ x: 0, y: 0, scale: 1 })}>
-        重置画面
-      </button>
+    </div>
+  );
+}
+
+function ScrapbookCanvas({
+  templateId,
+  slots = [],
+  description = "",
+  brokenPhotoIds = new Set<string>(),
+  onOpenCrop,
+  onImageError,
+}: {
+  templateId: ScrapbookTemplateId;
+  slots?: SenderDraft["scrapbook"]["slots"];
+  description?: string;
+  brokenPhotoIds?: Set<string>;
+  onOpenCrop?: (index: number) => void;
+  onImageError?: (slotId: string) => void;
+}) {
+  const template = SCRAPBOOK_TEMPLATES.find((item) => item.id === templateId)
+    ?? SCRAPBOOK_TEMPLATES[0];
+  const geometry = SCRAPBOOK_SLOT_GEOMETRY[template.id];
+
+  return (
+    <div className={`${styles.scrapbookCanvas} ${styles[`scrapbookCanvas${template.count}`]}`}>
+      <img className={`${styles.scrapbookLayer} ${styles.backgroundLayer}`} src={template.assets.background.src} alt="" aria-hidden="true" />
+      {geometry.map((slotGeometry, index) => {
+        const slot = slots[index];
+        const isBroken = Boolean(slot?.imageUrl) && brokenPhotoIds.has(slot.id);
+        const imageUrl = slot?.imageUrl && !isBroken ? slot.imageUrl : placeholderPaper.src;
+        const mask = template.assets.masks[index];
+        const maskedLayerStyle: CSSProperties = {
+          maskImage: `url("${mask.src}")`,
+          maskSize: "100% 100%",
+          maskRepeat: "no-repeat",
+          WebkitMaskImage: `url("${mask.src}")`,
+          WebkitMaskSize: "100% 100%",
+          WebkitMaskRepeat: "no-repeat",
+        };
+        const photoStyle: CSSProperties = {
+          left: `${slotGeometry.x}%`,
+          top: `${slotGeometry.y}%`,
+          width: `${slotGeometry.width}%`,
+          height: `${slotGeometry.height}%`,
+          ...(slot?.imageUrl && !isBroken ? photoTransformStyle(slot.transform) : {}),
+        };
+
+        return (
+          <div key={mask.src} className={styles.maskedPhotoLayer} style={maskedLayerStyle}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview is not an optimized remote asset. */}
+            <img
+              className={styles.scrapbookPhotoContent}
+              src={imageUrl}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              style={photoStyle}
+              onError={slot?.imageUrl ? () => onImageError?.(slot.id) : undefined}
+            />
+          </div>
+        );
+      })}
+      <img className={`${styles.scrapbookLayer} ${styles.framesLayer}`} src={template.assets.frames.src} alt="" aria-hidden="true" />
+      <img className={`${styles.scrapbookLayer} ${styles.foregroundLayer}`} src={template.assets.foreground.src} alt="" aria-hidden="true" />
+      <img className={`${styles.scrapbookLayer} ${styles.outerLayer}`} src={template.assets.outerDoodles.src} alt="" aria-hidden="true" />
+      <img className={`${styles.scrapbookLayer} ${styles.descriptionPaperLayer}`} src={template.assets.descriptionPaper.src} alt="" aria-hidden="true" />
+      {description ? <p className={styles.previewDescription}>{description}</p> : null}
+      {onOpenCrop ? geometry.map((slotGeometry, index) => {
+        const slot = slots[index];
+        const isOpenable = Boolean(slot?.imageUrl) && !brokenPhotoIds.has(slot.id);
+        if (!isOpenable) return null;
+        return (
+          <button
+            key={`${slot.id}-hotspot`}
+            type="button"
+            className={styles.scrapbookPhotoHotspot}
+            aria-label={`调整第 ${index + 1} 张照片`}
+            style={{
+              left: `${slotGeometry.x}%`,
+              top: `${slotGeometry.y}%`,
+              width: `${slotGeometry.width}%`,
+              height: `${slotGeometry.height}%`,
+            }}
+            onClick={() => onOpenCrop(index)}
+          />
+        );
+      }) : null}
+    </div>
+  );
+}
+
+function ScrapbookPreview({
+  draft,
+  brokenPhotoIds,
+  onOpenCrop,
+  onImageError,
+}: {
+  draft: SenderDraft["scrapbook"];
+  brokenPhotoIds: Set<string>;
+  onOpenCrop: (index: number) => void;
+  onImageError: (slotId: string) => void;
+}) {
+  return (
+    <div
+      className={styles.scrapbookPreview}
+      aria-label={`${draft.slots.length} 张照片的回忆手帐实时预览`}
+    >
+      <ScrapbookCanvas
+        templateId={draft.templateId}
+        slots={draft.slots}
+        description={draft.description}
+        brokenPhotoIds={brokenPhotoIds}
+        onOpenCrop={onOpenCrop}
+        onImageError={onImageError}
+      />
     </div>
   );
 }
@@ -421,6 +702,13 @@ export function SenderBuilder({
   const [saveError, setSaveError] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  const [photoSlotErrors, setPhotoSlotErrors] = useState<Record<string, string>>({});
+  const [brokenPhotoIds, setBrokenPhotoIds] = useState<Set<string>>(() => new Set());
+  const [memoryScreen, setMemoryScreen] = useState<MemoryScreen>("choice");
+  const [openSheet, setOpenSheet] = useState<"template" | "crop" | null>(null);
+  const [pendingTemplateId, setPendingTemplateId] = useState<ScrapbookTemplateId | null>(null);
+  const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
+  const [cropError, setCropError] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollArea = useRef<HTMLDivElement | null>(null);
   const stepHeading = useRef<HTMLHeadingElement | null>(null);
@@ -497,7 +785,9 @@ export function SenderBuilder({
   const rawDay = Number(draft.basics.birthday.slice(2));
   const day =
     month > 0 && rawDay >= 1 && rawDay <= daysInMonth(month) ? rawDay : 0;
-  const emptyScrapbookSlots = draft.scrapbook.slots.filter((slot) => !slot.imageUrl).length;
+  const missingScrapbookSlots = draft.scrapbook.slots.filter(
+    (slot) => !slot.imageUrl || brokenPhotoIds.has(slot.id),
+  ).length;
 
   function replaceDraft(updater: (previous: SenderDraft) => SenderDraft) {
     setDraft((previous) => ({
@@ -530,11 +820,19 @@ export function SenderBuilder({
   function goBack() {
     setShowErrors(false);
     setPhotoError("");
+    if (currentStep === "memory" && memoryScreen === "scrapbook") {
+      setMemoryScreen("choice");
+      setOpenSheet(null);
+      setCropDraft(null);
+      return;
+    }
     if (currentIndex === 0) {
       onExit?.();
       return;
     }
-    setCurrentStep(SENDER_STEPS[currentIndex - 1]);
+    const previousStep = SENDER_STEPS[currentIndex - 1];
+    setCurrentStep(previousStep);
+    if (previousStep === "memory") setMemoryScreen("choice");
   }
 
   function goNext() {
@@ -545,7 +843,9 @@ export function SenderBuilder({
     }
     setShowErrors(false);
     if (currentIndex < SENDER_STEPS.length - 1) {
-      setCurrentStep(SENDER_STEPS[currentIndex + 1]);
+      const nextStep = SENDER_STEPS[currentIndex + 1];
+      setCurrentStep(nextStep);
+      if (nextStep === "memory") setMemoryScreen("choice");
     }
   }
 
@@ -587,29 +887,54 @@ export function SenderBuilder({
     if (files.length === 0) return;
     setPhotoError("");
 
-    try {
-      const remainingSlots = draft.scrapbook.slots.filter((slot) => !slot.imageUrl).length;
-      if (remainingSlots === 0) {
-        setPhotoError("这几张照片已经放好了；如需更换，可以在对应照片下单独替换。");
-        return;
-      }
-      const images = await Promise.all(files.slice(0, remainingSlots).map(readImageFile));
-      replaceDraft((previous) => {
-        const slots = previous.scrapbook.slots.map((slot) => ({ ...slot }));
-        for (const imageUrl of images) {
-          let index = slots.findIndex((slot) => !slot.imageUrl);
-          if (index === -1) break;
-          slots[index].imageUrl = imageUrl;
-          slots[index].transform = { x: 0, y: 0, scale: 1 };
-        }
-        return {
-          ...previous,
-          scrapbook: { ...previous.scrapbook, slots },
-        };
-      });
-    } catch (error) {
-      setPhotoError(error instanceof Error ? error.message : "照片暂时无法读取。");
+    const targets = draft.scrapbook.slots
+      .map((slot, index) => ({ slot, index }))
+      .filter(({ slot }) => !slot.imageUrl || brokenPhotoIds.has(slot.id));
+    if (targets.length === 0) {
+      setPhotoError("照片已经放好了；点击预览里的照片，可以调整或替换。");
+      return;
     }
+
+    const selectedFiles = files.slice(0, targets.length);
+    const results = await Promise.allSettled(selectedFiles.map(readImageFile));
+    const successfulImages = new Map<number, string>();
+    const nextErrors: Record<string, string> = {};
+    results.forEach((result, resultIndex) => {
+      const target = targets[resultIndex];
+      if (result.status === "fulfilled") {
+        successfulImages.set(target.index, result.value);
+      } else {
+        nextErrors[target.slot.id] = result.reason instanceof Error
+          ? result.reason.message
+          : "这张照片暂时无法读取，请换一张试试。";
+      }
+    });
+
+    if (successfulImages.size > 0) {
+      replaceDraft((previous) => ({
+        ...previous,
+        scrapbook: {
+          ...previous.scrapbook,
+          slots: previous.scrapbook.slots.map((slot, index) => successfulImages.has(index)
+            ? {
+                ...slot,
+                imageUrl: successfulImages.get(index),
+                transform: { x: 0, y: 0, scale: 1 },
+              }
+            : slot),
+        },
+      }));
+      setBrokenPhotoIds((previous) => {
+        const next = new Set(previous);
+        successfulImages.forEach((_, index) => next.delete(draft.scrapbook.slots[index].id));
+        return next;
+      });
+    }
+    setPhotoSlotErrors((previous) => {
+      const next = { ...previous };
+      targets.slice(0, selectedFiles.length).forEach(({ slot }) => delete next[slot.id]);
+      return { ...next, ...nextErrors };
+    });
   }
 
   async function replacePhoto(index: number, event: ChangeEvent<HTMLInputElement>) {
@@ -628,24 +953,26 @@ export function SenderBuilder({
           ),
         },
       }));
+      setBrokenPhotoIds((previous) => {
+        const next = new Set(previous);
+        next.delete(draft.scrapbook.slots[index].id);
+        return next;
+      });
+      setPhotoSlotErrors((previous) => {
+        const next = { ...previous };
+        delete next[draft.scrapbook.slots[index].id];
+        return next;
+      });
     } catch (error) {
-      setPhotoError(error instanceof Error ? error.message : "照片暂时无法读取。");
+      const slotId = draft.scrapbook.slots[index].id;
+      setPhotoSlotErrors((previous) => ({
+        ...previous,
+        [slotId]: error instanceof Error ? error.message : "照片暂时无法读取。",
+      }));
     }
   }
 
-  function removePhoto(index: number) {
-    replaceDraft((previous) => ({
-      ...previous,
-      scrapbook: {
-        ...previous.scrapbook,
-        slots: previous.scrapbook.slots.map((slot, slotIndex) =>
-          slotIndex === index ? { ...slot, imageUrl: undefined, transform: { x: 0, y: 0, scale: 1 } } : slot,
-        ),
-      },
-    }));
-  }
-
-  function selectScrapbookTemplate(templateId: ScrapbookTemplateId) {
+  function applyScrapbookTemplate(templateId: ScrapbookTemplateId) {
     const slotCount = SCRAPBOOK_TEMPLATE_SLOT_COUNTS[templateId];
     replaceDraft((previous) => ({
       ...previous,
@@ -658,18 +985,110 @@ export function SenderBuilder({
         }),
       },
     }));
+    const remainingSlotIds = new Set(
+      Array.from({ length: slotCount }, (_, index) => `memory-${index + 1}`),
+    );
+    setBrokenPhotoIds((previous) => new Set(
+      [...previous].filter((slotId) => remainingSlotIds.has(slotId)),
+    ));
+    setPhotoSlotErrors((previous) => Object.fromEntries(
+      Object.entries(previous).filter(([slotId]) => remainingSlotIds.has(slotId)),
+    ));
+    setOpenSheet(null);
+    setPendingTemplateId(null);
+    setPhotoError("");
   }
 
-  function updatePhotoTransform(index: number, transform: ScrapbookPhotoTransform) {
+  function selectScrapbookTemplate(templateId: ScrapbookTemplateId) {
+    const nextSlotCount = SCRAPBOOK_TEMPLATE_SLOT_COUNTS[templateId];
+    const discardedPhotoCount = draft.scrapbook.slots
+      .slice(nextSlotCount)
+      .filter((slot) => slot.imageUrl && !brokenPhotoIds.has(slot.id)).length;
+    if (discardedPhotoCount > 0) {
+      setPendingTemplateId(templateId);
+      return;
+    }
+    applyScrapbookTemplate(templateId);
+  }
+
+  function chooseScrapbook() {
+    replaceDraft((previous) => ({
+      ...previous,
+      memoryKind: "scrapbook",
+      scrapbook: {
+        ...previous.scrapbook,
+        description: previous.scrapbook.description === "一起收藏这一天"
+          ? ""
+          : previous.scrapbook.description,
+      },
+    }));
+    setMemoryScreen("scrapbook");
+  }
+
+  function openCropEditor(index: number) {
+    const slot = draft.scrapbook.slots[index];
+    if (!slot.imageUrl || brokenPhotoIds.has(slot.id)) return;
+    setCropDraft({
+      index,
+      imageUrl: slot.imageUrl,
+      transform: { ...slot.transform },
+    });
+    setCropError("");
+    setOpenSheet("crop");
+  }
+
+  async function replaceCropPhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !cropDraft) return;
+    setCropError("");
+    try {
+      const imageUrl = await readImageFile(file);
+      setCropDraft({
+        ...cropDraft,
+        imageUrl,
+        transform: { x: 0, y: 0, scale: 1 },
+      });
+    } catch (error) {
+      setCropError(error instanceof Error ? error.message : "照片暂时无法读取。");
+    }
+  }
+
+  function confirmCrop() {
+    if (!cropDraft) return;
+    const { index, imageUrl, transform } = cropDraft;
     replaceDraft((previous) => ({
       ...previous,
       scrapbook: {
         ...previous.scrapbook,
-        slots: previous.scrapbook.slots.map((slot, slotIndex) =>
-          slotIndex === index ? { ...slot, transform } : slot,
-        ),
+        slots: previous.scrapbook.slots.map((slot, slotIndex) => slotIndex === index
+          ? { ...slot, imageUrl, transform }
+          : slot),
       },
     }));
+    const slotId = draft.scrapbook.slots[index].id;
+    setBrokenPhotoIds((previous) => {
+      const next = new Set(previous);
+      next.delete(slotId);
+      return next;
+    });
+    setPhotoSlotErrors((previous) => {
+      const next = { ...previous };
+      delete next[slotId];
+      return next;
+    });
+    setOpenSheet(null);
+    setCropDraft(null);
+  }
+
+  function completeScrapbook() {
+    if (missingScrapbookSlots > 0) {
+      setPhotoError(`还差 ${missingScrapbookSlots} 张照片，请补齐后再完成心意。`);
+      setShowErrors(true);
+      scrollArea.current?.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    goNext();
   }
 
   if (screen === "loading") {
@@ -713,7 +1132,15 @@ export function SenderBuilder({
     );
   }
 
-  const meta = STEP_META[currentStep];
+  const meta = currentStep === "memory" && memoryScreen === "scrapbook"
+    ? {
+        title: "做一页回忆手帐",
+        intro: "照片会自动填进固定版式；只有主体被切到时，才需要点照片调整。",
+      }
+    : STEP_META[currentStep];
+  const selectedScrapbookTemplate = SCRAPBOOK_TEMPLATES.find(
+    (template) => template.id === draft.scrapbook.templateId,
+  ) ?? SCRAPBOOK_TEMPLATES[0];
   const selectedGiftTargetId = draft.unlock.kind === "find-gift"
     ? draft.unlock.targetId
     : "sofa-box";
@@ -938,7 +1365,7 @@ export function SenderBuilder({
             </>
           ) : null}
 
-          {currentStep === "memory" ? (
+          {currentStep === "memory" && memoryScreen === "choice" ? (
             <>
               <fieldset className={styles.fieldset}>
                 <legend>选择一种心意内容</legend>
@@ -956,10 +1383,7 @@ export function SenderBuilder({
                     selected={draft.memoryKind === "scrapbook"}
                     title="回忆手帐"
                     description="用 1–3 张照片，留住几段回忆"
-                    onClick={() => replaceDraft((previous) => ({
-                      ...previous,
-                      memoryKind: "scrapbook",
-                    }))}
+                    onClick={chooseScrapbook}
                   />
                 </div>
               </fieldset>
@@ -1010,85 +1434,101 @@ export function SenderBuilder({
             </>
           ) : null}
 
-          {currentStep === "memory" && draft.memoryKind === "scrapbook" ? (
+          {currentStep === "memory" && memoryScreen === "scrapbook" ? (
             <>
-              <fieldset className={styles.fieldset}>
-                <legend>回忆册版式</legend>
-                <div className={styles.templateChoiceList}>
-                  {SCRAPBOOK_TEMPLATES.map((template) => (
-                    <ScrapbookTemplateChoice
-                      key={template.id}
-                      selected={draft.scrapbook.templateId === template.id}
-                      template={template}
-                      onClick={() => selectScrapbookTemplate(template.id)}
-                    />
-                  ))}
+              <section className={styles.layoutSummary} aria-labelledby="layout-summary-title">
+                <span className={styles.templateThumb} aria-hidden="true">
+                  <ScrapbookCanvas templateId={selectedScrapbookTemplate.id} />
+                </span>
+                <div>
+                  <span className={styles.sectionKicker}>当前版式</span>
+                  <h2 id="layout-summary-title">{selectedScrapbookTemplate.name}</h2>
+                  <p>{selectedScrapbookTemplate.description}</p>
                 </div>
-              </fieldset>
-              <section className={styles.memoryComposer} aria-label="编辑回忆册内容">
-                <div className={styles.memoryComposerHeader}>
+                <button type="button" className={styles.summaryAction} onClick={() => setOpenSheet("template")}>
+                  更换版式
+                </button>
+              </section>
+
+              <section className={styles.photoPickerSection} aria-labelledby="photo-picker-title">
+                <div className={styles.sectionHeading}>
                   <div>
-                    <strong>把这一页回忆拼好</strong>
-                    <p>一句话 + {draft.scrapbook.slots.length} 张照片，就够了。</p>
+                    <span className={styles.sectionKicker}>照片</span>
+                    <h2 id="photo-picker-title">按选择顺序自动填槽</h2>
                   </div>
-                  {emptyScrapbookSlots > 0 ? (
-                    <label className={styles.uploadButton} aria-label={`一次选择 ${emptyScrapbookSlots} 张照片`}>
-                      一次选 {emptyScrapbookSlots} 张
-                      <input type="file" accept="image/*" multiple onChange={addPhotos} />
-                    </label>
-                  ) : (
-                    <span className={styles.uploadButton} aria-disabled="true">照片已放好</span>
-                  )}
+                  <span
+                    className={missingScrapbookSlots > 0 ? styles.missingCount : styles.completeCount}
+                    aria-live="polite"
+                  >
+                    {missingScrapbookSlots > 0 ? `还差 ${missingScrapbookSlots} 张` : "照片已放好"}
+                  </span>
                 </div>
 
-                <label className={styles.memoryComposerNote}>
-                  <span>想为这些照片留下一句话（可选）</span>
-                  <textarea
-                    value={draft.scrapbook.description}
-                    maxLength={20}
-                    rows={2}
-                    placeholder="想说的话写在这里……"
-                    onChange={(event) => replaceDraft((previous) => ({
-                      ...previous,
-                      scrapbook: { ...previous.scrapbook, description: event.target.value },
-                    }))}
-                  />
-                  <small>{draft.scrapbook.description.length}/20，最多两行</small>
-                </label>
+                {missingScrapbookSlots > 0 ? (
+                  <label className={styles.photoSelectButton}>
+                    {draft.scrapbook.slots.length === 1 ? "选择一张照片" : `选择照片（最多 ${missingScrapbookSlots} 张）`}
+                    <input type="file" accept="image/*" multiple={draft.scrapbook.slots.length > 1} onChange={addPhotos} />
+                  </label>
+                ) : (
+                  <p className={styles.photoReadyHint}>需要更换时，点下方预览中的对应照片。</p>
+                )}
 
                 {photoError ? <p className={styles.photoError} role="alert">{photoError}</p> : null}
-                <div className={`${styles.photoList} ${styles[`photoList${draft.scrapbook.slots.length}`]}`}>
-                  {draft.scrapbook.slots.map((slot, index) => (
-                    <article className={styles.photoSlot} key={slot.id}>
-                      {slot.imageUrl ? (
-                        <PhotoCropEditor
-                          imageUrl={slot.imageUrl}
-                          index={index}
-                          transform={slot.transform}
-                          onChange={(transform) => updatePhotoTransform(index, transform)}
-                        />
-                      ) : (
-                        <label className={styles.emptyPhotoSlot}>
-                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7v10M7 12h10M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" /></svg>
-                          <span>添加照片 {index + 1}</span>
+                <div className={styles.slotStatusList}>
+                  {draft.scrapbook.slots.map((slot, index) => {
+                    const slotError = photoSlotErrors[slot.id] || (brokenPhotoIds.has(slot.id)
+                      ? "这张照片没有读出来，请重新选择。"
+                      : "");
+                    if (!slotError) return null;
+                    return (
+                      <div key={slot.id} className={styles.slotError} role="alert">
+                        <span>照片 {index + 1}：{slotError}</span>
+                        <label>
+                          重新选择
                           <input type="file" accept="image/*" onChange={(event) => replacePhoto(index, event)} />
                         </label>
-                      )}
-                      {slot.imageUrl ? (
-                        <div className={styles.photoControls}>
-                          <label className={styles.smallButton}>
-                            替换
-                            <input type="file" accept="image/*" onChange={(event) => replacePhoto(index, event)} />
-                          </label>
-                          <button type="button" className={styles.dangerButton} onClick={() => removePhoto(index)}>
-                            删除
-                          </button>
-                        </div>
-                      ) : null}
-                    </article>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
+
+              <section className={styles.previewSection} aria-labelledby="scrapbook-preview-title">
+                <div className={styles.sectionHeading}>
+                  <div>
+                    <span className={styles.sectionKicker}>实时预览</span>
+                    <h2 id="scrapbook-preview-title">点击照片可以调整画面</h2>
+                  </div>
+                </div>
+                <ScrapbookPreview
+                  draft={draft.scrapbook}
+                  brokenPhotoIds={brokenPhotoIds}
+                  onOpenCrop={openCropEditor}
+                  onImageError={(slotId) => {
+                    setBrokenPhotoIds((previous) => new Set(previous).add(slotId));
+                    setPhotoSlotErrors((previous) => ({
+                      ...previous,
+                      [slotId]: "这张照片没有读出来，请重新选择。",
+                    }));
+                  }}
+                />
+              </section>
+
+              <label className={styles.scrapbookNote}>
+                <span className={styles.sectionKicker}>共同说明（可选）</span>
+                <span className={styles.noteTitle}>给这一页留一句话</span>
+                <textarea
+                  value={draft.scrapbook.description}
+                  maxLength={20}
+                  rows={2}
+                  placeholder="例如：那天的风和笑声都还记得"
+                  onChange={(event) => replaceDraft((previous) => ({
+                    ...previous,
+                    scrapbook: { ...previous.scrapbook, description: event.target.value },
+                  }))}
+                />
+                <small>{draft.scrapbook.description.length}/20，最多两行</small>
+              </label>
             </>
           ) : null}
 
@@ -1169,11 +1609,100 @@ export function SenderBuilder({
         <button
           type="button"
           className={styles.primaryButton}
-          onClick={currentStep === "publish" ? openPreview : goNext}
+          onClick={currentStep === "publish"
+            ? openPreview
+            : currentStep === "memory" && memoryScreen === "scrapbook"
+              ? completeScrapbook
+              : goNext}
         >
-          {currentStep === "publish" ? "保存并预览" : "继续"}
+          {currentStep === "publish"
+            ? "保存并预览"
+            : currentStep === "memory" && memoryScreen === "scrapbook"
+              ? "完成心意"
+              : "继续"}
         </button>
       </footer>
+
+      {openSheet === "template" ? (
+        <BottomSheet
+          eyebrow="固定 3:4 版式"
+          title="选择回忆手帐版式"
+          onClose={() => {
+            setOpenSheet(null);
+            setPendingTemplateId(null);
+          }}
+        >
+          {pendingTemplateId ? (
+            <div className={styles.templateConfirm}>
+              <p>换成更少照片的版式后，超出的照片会从这份手帐里移除。</p>
+              <div>
+                <button type="button" onClick={() => setPendingTemplateId(null)}>保留当前版式</button>
+                <button type="button" className={styles.primaryButton} onClick={() => applyScrapbookTemplate(pendingTemplateId)}>
+                  确认切换
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.templateSheetList}>
+              {SCRAPBOOK_TEMPLATES.map((template) => (
+                <ScrapbookTemplateChoice
+                  key={template.id}
+                  selected={draft.scrapbook.templateId === template.id}
+                  template={template}
+                  onClick={() => selectScrapbookTemplate(template.id)}
+                />
+              ))}
+            </div>
+          )}
+        </BottomSheet>
+      ) : null}
+
+      {openSheet === "crop" && cropDraft ? (
+        <BottomSheet
+          eyebrow={`照片 ${cropDraft.index + 1}`}
+          title="调整照片主体"
+          onClose={() => {
+            setOpenSheet(null);
+            setCropDraft(null);
+            setCropError("");
+          }}
+        >
+          <div className={styles.cropSheetBody}>
+            <PhotoCropStage
+              imageUrl={cropDraft.imageUrl}
+              index={cropDraft.index}
+              transform={cropDraft.transform}
+              onChange={(transform) => setCropDraft({ ...cropDraft, transform })}
+              onImageError={() => setCropError("这张照片没有读出来，请重新选择。")}
+              slotCount={draft.scrapbook.slots.length}
+            />
+            {cropError ? <p className={styles.cropError} role="alert">{cropError}</p> : null}
+            <div className={styles.cropSecondaryActions}>
+              <button
+                type="button"
+                onClick={() => setCropDraft({
+                  ...cropDraft,
+                  transform: { x: 0, y: 0, scale: 1 },
+                })}
+              >
+                重置
+              </button>
+              <label>
+                替换照片
+                <input type="file" accept="image/*" onChange={replaceCropPhoto} />
+              </label>
+            </div>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              disabled={Boolean(cropError)}
+              onClick={confirmCrop}
+            >
+              完成调整
+            </button>
+          </div>
+        </BottomSheet>
+      ) : null}
     </main>
   );
 }
