@@ -17,6 +17,8 @@ type GiftRevealProps = {
   onContinue: () => void;
 };
 
+const CONFETTI_PIECES = Array.from({ length: 6 }, (_, index) => index);
+
 function PlatformIcon({ platform }: { platform: GiftLinkPlatformId }) {
   if (platform === "taobao") {
     return (
@@ -96,6 +98,12 @@ export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
         </div>
       ) : (
         <div className={styles.receipt}>
+          <div className={styles.confettiBurst} aria-hidden="true">
+            {CONFETTI_PIECES.map((piece) => (
+              <span key={piece} className={styles.confettiPiece} />
+            ))}
+          </div>
+
           <h1 className={styles.title}>礼物已经送到啦</h1>
 
           <Image
