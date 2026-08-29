@@ -2,6 +2,11 @@
 
 Ta-da! 是一份可以被亲手制作、互动解锁和逐步拆开的生日礼物。
 
+## 在线体验
+
+- [体验固定 Receiver 生日惊喜](https://ta-da-birthday-surprise.vercel.app/s/mia-birthday)
+- [打开 Sender 创作端](https://ta-da-birthday-surprise.vercel.app/create)
+
 这个仓库包含作品 Demo 的完整前端代码，覆盖送礼人创作与收礼人接收两端的核心体验：
 
 - 找礼物、剪刀石头布、吹蜡烛与直接送达
@@ -28,4 +33,3 @@ npm run dev
 - React
 - TypeScript
 - Tailwind CSS
-
