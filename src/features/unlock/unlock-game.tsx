@@ -343,11 +343,14 @@ function FindGiftSuccessState({
 }) {
   const target = giftTargets.find((item) => item.id === config.targetId);
   if (!target) return null;
+  const successMessage: Record<FindGiftConfig["targetId"], string> = {
+    "sofa-box": "绿礼盒被你找到了，下一站，拆开生日小惊喜！",
+    "plant-box": "黄礼盒被你找到了，下一站，拆开生日小惊喜！",
+    "rug-box": "粉礼盒被你找到了，下一站，拆开生日小惊喜！",
+  };
 
   return (
     <div className={styles.findGift} aria-live="polite">
-      <h2>惊喜找到了！</h2>
-      <p className={styles.lead}>{target.label}就是答案，接下来去看看为你准备的心意。</p>
       <div className={styles.roundRow}>
         <span>共猜了 {attempts} 次</span>
         <strong className="text-[color-mix(in_srgb,var(--color-mint)_58%,var(--ink))]">解锁成功</strong>
@@ -366,7 +369,7 @@ function FindGiftSuccessState({
         />
         <div>
           <h3>Ta-da!</h3>
-          <p>Tada 和礼物一起出现，这份生日心意已经解锁。</p>
+          <p>{successMessage[target.id]}</p>
         </div>
       </div>
       <ActionButton disabled={disabled} onClick={onContinue}>
