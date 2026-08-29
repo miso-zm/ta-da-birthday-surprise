@@ -1,48 +1,204 @@
 "use client";
 
-import { useState } from "react";
-import type { ScrapbookContent, ScrapbookPhotoTransform, ScrapbookSlot } from "@/lib/surprise-contract";
+/* eslint-disable @next/next/no-img-element -- D-044 is a layered poster and Preview photos may be browser-local data URLs. */
+import { useState, type CSSProperties } from "react";
+import type {
+  ScrapbookContent,
+  ScrapbookSlot,
+  ScrapbookTemplateId,
+} from "@/lib/surprise-contract";
 import { PrimaryButton, StageCard } from "@/features/shared/placeholders";
+
+import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.png";
+import oneBackground from "./assets/d044/one/background.png";
+import oneDescriptionPaper from "./assets/d044/one/description-torn-paper.png";
+import oneForeground from "./assets/d044/one/foreground-tape-clips-stickers.png";
+import oneOuterDoodles from "./assets/d044/one/outer-doodles-stars.png";
+import onePhotoFrames from "./assets/d044/one/photo-frames.png";
+import onePhotoMask from "./assets/d044/one/photo-slot-1-mask.png";
+import threeBackground from "./assets/d044/three/background.png";
+import threeDescriptionPaper from "./assets/d044/three/description-torn-paper.png";
+import threeForeground from "./assets/d044/three/foreground-tape-clips-stickers.png";
+import threeOuterDoodles from "./assets/d044/three/outer-doodles-stars.png";
+import threePhotoFrames from "./assets/d044/three/photo-frames.png";
+import threePhotoMaskOne from "./assets/d044/three/photo-slot-1-mask.png";
+import threePhotoMaskTwo from "./assets/d044/three/photo-slot-2-mask.png";
+import threePhotoMaskThree from "./assets/d044/three/photo-slot-3-mask.png";
+import twoBackground from "./assets/d044/two/background.png";
+import twoDescriptionPaper from "./assets/d044/two/description-torn-paper.png";
+import twoForeground from "./assets/d044/two/foreground-tape-clips-stickers.png";
+import twoOuterDoodles from "./assets/d044/two/outer-doodles-stars.png";
+import twoPhotoFrames from "./assets/d044/two/photo-frames.png";
+import twoPhotoMaskOne from "./assets/d044/two/photo-slot-1-mask.png";
+import twoPhotoMaskTwo from "./assets/d044/two/photo-slot-2-mask.png";
+import {
+  getImageFailureKey,
+  getPhotoTransformStyle,
+  normalizeScrapbookTransform,
+} from "./scrapbook-logic";
 import styles from "./scrapbook.module.css";
 
-type ScrapbookProps = { scrapbook: ScrapbookContent; onContinue: () => void };
+type ScrapbookProps = {
+  scrapbook: ScrapbookContent;
+  onContinue: () => void;
+};
 
-function photoTransformStyle(transform: ScrapbookPhotoTransform) {
-  const maxOffset = ((transform.scale - 1) / transform.scale) * 50;
-  return { transform: `translate(${transform.x * maxOffset}%, ${transform.y * maxOffset}%) scale(${transform.scale})` };
+type SlotGeometry = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+const TEMPLATE_CONFIG = {
+  "one-photo": {
+    label: "一张主角",
+    assets: {
+      background: oneBackground,
+      frames: onePhotoFrames,
+      foreground: oneForeground,
+      outerDoodles: oneOuterDoodles,
+      descriptionPaper: oneDescriptionPaper,
+      masks: [onePhotoMask],
+    },
+    geometry: [{ x: 16.1, y: 16.6, width: 67.5, height: 42.4 }],
+  },
+  "two-photo": {
+    label: "两格故事",
+    assets: {
+      background: twoBackground,
+      frames: twoPhotoFrames,
+      foreground: twoForeground,
+      outerDoodles: twoOuterDoodles,
+      descriptionPaper: twoDescriptionPaper,
+      masks: [twoPhotoMaskOne, twoPhotoMaskTwo],
+    },
+    geometry: [
+      { x: 15.9, y: 12.4, width: 69.2, height: 28.5 },
+      { x: 25.2, y: 46.9, width: 51.3, height: 29.6 },
+    ],
+  },
+  "three-photo": {
+    label: "三段回忆",
+    assets: {
+      background: threeBackground,
+      frames: threePhotoFrames,
+      foreground: threeForeground,
+      outerDoodles: threeOuterDoodles,
+      descriptionPaper: threeDescriptionPaper,
+      masks: [threePhotoMaskOne, threePhotoMaskTwo, threePhotoMaskThree],
+    },
+    geometry: [
+      { x: 14.4, y: 8.4, width: 71.6, height: 33.5 },
+      { x: 13.3, y: 46.3, width: 33.9, height: 25.9 },
+      { x: 52.9, y: 46.3, width: 34.3, height: 25.8 },
+    ],
+  },
+} satisfies Record<
+  ScrapbookTemplateId,
+  {
+    label: string;
+    assets: {
+      background: typeof oneBackground;
+      frames: typeof onePhotoFrames;
+      foreground: typeof oneForeground;
+      outerDoodles: typeof oneOuterDoodles;
+      descriptionPaper: typeof oneDescriptionPaper;
+      masks: ReadonlyArray<typeof onePhotoMask>;
+    };
+    geometry: ReadonlyArray<SlotGeometry>;
+  }
+>;
+
+function layerStyle(maskUrl: string): CSSProperties {
+  return {
+    maskImage: `url("${maskUrl}")`,
+    maskSize: "100% 100%",
+    maskRepeat: "no-repeat",
+    WebkitMaskImage: `url("${maskUrl}")`,
+    WebkitMaskSize: "100% 100%",
+    WebkitMaskRepeat: "no-repeat",
+  };
 }
 
-function PhotoPlaceholder({ index }: { index: number }) {
-  return <div className={styles.photoPlaceholder}><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="5" y="7" width="38" height="34" rx="6" fill="#FFFDF7" stroke="currentColor" strokeWidth="2.5" /><circle cx="17" cy="18" r="4" fill="#F2B7AD" stroke="currentColor" strokeWidth="2" /><path d="M10 35l9-9 6 6 5-5 8 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg><span>照片 {index + 1}</span></div>;
-}
-
-function MemoryPhoto({ slot, index, failedImages, onImageError }: { slot: ScrapbookSlot; index: number; failedImages: Record<string, true>; onImageError: (key: string) => void }) {
-  const imageKey = `${slot.id}:${slot.imageUrl ?? ""}`;
-  const showImage = Boolean(slot.imageUrl) && !failedImages[imageKey];
-  return (
-    <figure className={`${styles.photoFrame} ${styles[`photo${index}`] ?? ""}`}>
-      <div className={styles.photoInner}>
-        {showImage ? <img src={slot.imageUrl} alt={`第 ${index + 1} 张回忆照片`} className={styles.photoImage} style={photoTransformStyle(slot.transform)} onError={() => onImageError(imageKey)} /> : <PhotoPlaceholder index={index} />}
-      </div>
-    </figure>
-  );
-}
-
-function PaperDecorations() {
-  return <div className={styles.decorations} aria-hidden="true"><span className={`${styles.star} ${styles.starCoral}`}>✦</span><span className={`${styles.star} ${styles.starYellow}`}>✦</span><span className={`${styles.star} ${styles.starMint}`}>✦</span><span className={`${styles.paperScrap} ${styles.paperCoral}`} /><span className={`${styles.paperScrap} ${styles.paperMint}`} /><span className={styles.doodle}>⌒</span></div>;
+function photoStyle(slot: ScrapbookSlot | undefined, geometry: SlotGeometry): CSSProperties {
+  return {
+    left: `${geometry.x}%`,
+    top: `${geometry.y}%`,
+    width: `${geometry.width}%`,
+    height: `${geometry.height}%`,
+    ...(slot ? getPhotoTransformStyle(normalizeScrapbookTransform(slot.transform)) : {}),
+  };
 }
 
 export function Scrapbook({ scrapbook, onContinue }: ScrapbookProps) {
-  const [failedImages, setFailedImages] = useState<Record<string, true>>({});
-  const markImageFailed = (key: string) => setFailedImages((current) => ({ ...current, [key]: true }));
+  const template = TEMPLATE_CONFIG[scrapbook.templateId];
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
+
+  const failedSlots = template.geometry.flatMap((_, index) => {
+    const slot = scrapbook.slots[index];
+    if (!slot?.imageUrl) return [];
+    return failedImages.has(getImageFailureKey(slot)) ? [index] : [];
+  });
+
   return (
-    <StageCard label="翻开这页回忆">
-      <article className={`${styles.scrapbookPage} ${styles[scrapbook.templateId]}`} aria-label={`${scrapbook.slots.length} 张照片的回忆手帐`}>
-        <PaperDecorations />
-        <div className={styles.photoLayer} aria-label="回忆照片">{scrapbook.slots.map((slot, index) => <MemoryPhoto key={`${slot.id}-${index}`} slot={slot} index={index} failedImages={failedImages} onImageError={markImageFailed} />)}</div>
-        <div className={styles.commonDescription} aria-label={scrapbook.description ? `共同回忆说明：${scrapbook.description}` : "共同回忆说明为空"}><p>{scrapbook.description}</p></div>
+    <StageCard label="我们的回忆手帐">
+      <article
+        className={styles.poster}
+        aria-label={`${template.label}回忆手帐，共 ${template.geometry.length} 个照片位`}
+      >
+        <img className={`${styles.layer} ${styles.backgroundLayer}`} src={template.assets.background.src} alt="" aria-hidden="true" />
+
+        {template.geometry.map((geometry, index) => {
+          const slot = scrapbook.slots[index];
+          const failureKey = slot ? getImageFailureKey(slot) : "";
+          const hasPhoto = Boolean(slot?.imageUrl) && !failedImages.has(failureKey);
+          const source = hasPhoto ? slot?.imageUrl : placeholderPaper.src;
+          const mask = template.assets.masks[index];
+
+          return (
+            <div
+              key={`${scrapbook.templateId}-${index}`}
+              className={styles.maskedPhotoLayer}
+              style={layerStyle(mask.src)}
+            >
+              <img
+                className={styles.photo}
+                src={source}
+                alt={hasPhoto ? `第 ${index + 1} 张回忆照片` : ""}
+                aria-hidden={!hasPhoto}
+                draggable={false}
+                style={photoStyle(hasPhoto ? slot : undefined, geometry)}
+                onError={hasPhoto && slot
+                  ? () => setFailedImages((current) => new Set(current).add(getImageFailureKey(slot)))
+                  : undefined}
+              />
+            </div>
+          );
+        })}
+
+        <img className={`${styles.layer} ${styles.framesLayer}`} src={template.assets.frames.src} alt="" aria-hidden="true" />
+        <img className={`${styles.layer} ${styles.foregroundLayer}`} src={template.assets.foreground.src} alt="" aria-hidden="true" />
+        <img className={`${styles.layer} ${styles.outerLayer}`} src={template.assets.outerDoodles.src} alt="" aria-hidden="true" />
+        <img className={`${styles.layer} ${styles.descriptionPaperLayer}`} src={template.assets.descriptionPaper.src} alt="" aria-hidden="true" />
+        {scrapbook.description ? (
+          <p className={`${styles.description} ${styles[`description${template.geometry.length}`]}`}>
+            {scrapbook.description}
+          </p>
+        ) : null}
       </article>
-      <p className="mt-4 text-center text-sm font-semibold leading-6 text-[var(--muted)]">每一格，都是想和你继续收藏的日子。</p>
+
+      {failedSlots.length > 0 ? (
+        <div className={styles.photoNotice} role="status" aria-live="polite">
+          <p>
+            第 {failedSlots.map((index) => index + 1).join("、")} 张照片暂时没能打开，其他回忆都还在。
+          </p>
+          <button type="button" onClick={() => setFailedImages(new Set())}>重新加载照片</button>
+        </div>
+      ) : (
+        <p className={styles.helperText}>每一张照片，都保留了送出时选好的取景。</p>
+      )}
+
       <PrimaryButton onClick={onContinue}>继续拆礼物</PrimaryButton>
     </StageCard>
   );
