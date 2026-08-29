@@ -12,7 +12,7 @@ import { BirthdayCard } from "@/features/memory/card/birthday-card";
 import { Scrapbook } from "@/features/memory/scrapbook/scrapbook";
 import { GiftReveal } from "@/features/gift/gift-reveal";
 import { Share } from "@/features/share/share";
-import { PrimaryButton, StageCard } from "@/features/shared/placeholders";
+import { PrimaryButton } from "@/features/shared/placeholders";
 
 type ReceiverShellProps = {
   surprise: Surprise | SurprisePreview;
@@ -20,16 +20,14 @@ type ReceiverShellProps = {
 };
 
 function PreviewComplete({
-  surprise,
   onExit,
   onReplay,
 }: {
-  surprise: SurprisePreview;
   onExit?: () => void;
   onReplay: () => void;
 }) {
   return (
-    <StageCard label="本地预览已完成">
+    <section className="w-full px-1 py-2">
       <div className="paper-surface paper-fold p-6 text-center">
         <div
           aria-hidden="true"
@@ -37,21 +35,9 @@ function PreviewComplete({
         >
           Ta-da!
         </div>
-        <p className="mt-5 text-xs font-bold tracking-wide text-[var(--coral-dark)]">
-          完整流程已看完
-        </p>
-        <h1 className="mt-2 text-2xl font-bold text-[var(--ink)]">
+        <h1 className="mt-5 text-2xl font-bold text-[var(--ink)]">
           这份惊喜已经准备好了
         </h1>
-        <p className="mt-3 text-sm font-semibold leading-6 text-[var(--muted)]">
-          现在还是本地预览，公开分享链接会在正式发布时再生成。
-        </p>
-      </div>
-
-      <div className="paper-surface mt-4 p-4">
-        <p className="text-xs font-bold text-[var(--coral-dark)]">以后分享时，会显示这段话</p>
-        <p className="mt-2 font-bold text-[var(--ink)]">{surprise.share.title}</p>
-        <p className="mt-1 text-sm font-semibold leading-6 text-[var(--muted)]">{surprise.share.text}</p>
       </div>
 
       <PrimaryButton onClick={onExit ?? onReplay}>回去继续编辑</PrimaryButton>
@@ -60,9 +46,9 @@ function PreviewComplete({
         onClick={onReplay}
         className="mt-3 min-h-12 w-full rounded-[var(--radius-round)] border border-[var(--ui-line)] bg-[var(--paper)] px-4 text-sm font-bold text-[var(--ink)] active:translate-y-px"
       >
-        从头再看一遍
+        再看一遍
       </button>
-    </StageCard>
+    </section>
   );
 }
 
@@ -144,7 +130,6 @@ export function ReceiverShell({ surprise, onExitPreview }: ReceiverShellProps) {
         {step === "share" && (
           isPreview ? (
             <PreviewComplete
-              surprise={surprise}
               onExit={onExitPreview}
               onReplay={() => setStep("opening")}
             />
