@@ -62,6 +62,18 @@ function migrateLegacySenderDraft(value: unknown): unknown {
     };
   }
 
+  if (isRecord(migrated.gift) && migrated.gift.kind === undefined) {
+    migrated = {
+      ...migrated,
+      gift: {
+        ...migrated.gift,
+        kind: isString(migrated.gift.externalUrl) && migrated.gift.externalUrl.trim()
+          ? "link"
+          : "none",
+      },
+    };
+  }
+
   if (isRecord(migrated.scrapbook) && Array.isArray(migrated.scrapbook.slots)) {
     const legacySlots = migrated.scrapbook.slots.filter(isRecord);
     const rawTemplate = isString(migrated.scrapbook.templateId)
@@ -171,6 +183,7 @@ function hasSenderDraftShape(value: unknown): value is Record<string, unknown> {
     isString(value.scrapbook.description) &&
     Array.isArray(value.scrapbook.slots) &&
     value.scrapbook.slots.every(isScrapbookSlot) &&
+    (value.gift.kind === "none" || value.gift.kind === "link") &&
     isString(value.gift.title) &&
     isString(value.gift.description) &&
     isString(value.gift.externalUrl)

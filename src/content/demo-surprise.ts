@@ -25,6 +25,7 @@ export const demoSurprise: Surprise = {
     },
   },
   gift: {
+    kind: "link",
     title: "一本属于你的年度照片书",
     description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
     externalUrl: "https://example.com",

@@ -6,6 +6,7 @@ import type {
   Surprise,
   SurprisePreview,
 } from "@/lib/surprise-contract";
+import { hasGiftLink } from "@/lib/surprise-contract";
 import { Opening } from "@/features/opening/opening";
 import { UnlockGame } from "@/features/unlock/unlock-game";
 import { BirthdayCard } from "@/features/memory/card/birthday-card";
@@ -54,9 +55,14 @@ function PreviewComplete({
 
 export function ReceiverShell({ surprise, onExitPreview }: ReceiverShellProps) {
   const [step, setStep] = useState<ReceiverStep>("opening");
+  const hasGift = hasGiftLink(surprise.gift);
   const steps: ReceiverStep[] = surprise.unlock.kind === "none"
-    ? ["opening", "memory", "gift", "share"]
-    : ["opening", "unlock", "memory", "gift", "share"];
+    ? hasGift
+      ? ["opening", "memory", "gift", "share"]
+      : ["opening", "memory", "share"]
+    : hasGift
+      ? ["opening", "unlock", "memory", "gift", "share"]
+      : ["opening", "unlock", "memory", "share"];
   const currentIndex = steps.indexOf(step);
   const isPreview = "mode" in surprise && surprise.mode === "preview";
   const publishedShareUrl = "slug" in surprise
@@ -111,16 +117,16 @@ export function ReceiverShell({ surprise, onExitPreview }: ReceiverShellProps) {
             recipient={surprise.recipient}
             sender={surprise.sender}
             card={surprise.memory.card}
-            onContinue={() => advance("memory", "gift")}
+            onContinue={() => advance("memory", hasGift ? "gift" : "share")}
           />
         )}
         {step === "memory" && surprise.memory.kind === "scrapbook" && (
           <Scrapbook
             scrapbook={surprise.memory.scrapbook}
-            onContinue={() => advance("memory", "gift")}
+            onContinue={() => advance("memory", hasGift ? "gift" : "share")}
           />
         )}
-        {step === "gift" && (
+        {step === "gift" && hasGift && (
           <GiftReveal
             gift={surprise.gift}
             onReveal={() => undefined}

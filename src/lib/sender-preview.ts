@@ -43,6 +43,7 @@ export function createDefaultSenderDraft(
       slots: [{ id: "memory-1", transform: { x: 0, y: 0, scale: 1 } }],
     },
     gift: {
+      kind: "link",
       title: "一本属于你的年度照片书",
       description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
       externalUrl: "https://example.com",
@@ -116,15 +117,11 @@ export function validateSenderDraft(
     }
   }
 
-  const giftTitleLength = draft.gift.title.trim().length;
-  if (giftTitleLength < 2 || giftTitleLength > 40) {
-    add("gift", "礼物名称请写在 2–40 个字之间。");
-  }
-  if (draft.gift.description.trim().length > 120) {
-    add("gift", "补充的话不要超过 120 个字。");
-  }
-  if (!isHttpsUrl(draft.gift.externalUrl.trim())) {
-    add("gift", "请填写有效的 HTTPS 礼物链接。");
+  if (
+    draft.gift.kind === "link" &&
+    !isHttpsUrl(draft.gift.externalUrl.trim())
+  ) {
+    add("gift", "请填写有效的 HTTPS 礼物领取链接。");
   }
 
   return errors;
@@ -194,13 +191,16 @@ export function senderDraftToPreview(
     opening: {
       templateId: "warm-letter",
       title: `${recipientName}，生日快乐！`,
-      prompt: draft.unlock.kind === "none"
-        ? `${senderName} 留了一段想对你说的话，还有一份小礼物。`
-        : `${senderName} 留了一段想对你说的话，还有一份小礼物，等你亲手打开。`,
+      prompt: draft.gift.kind === "link"
+        ? draft.unlock.kind === "none"
+          ? `${senderName} 留了一段想对你说的话，还有一份小礼物。`
+          : `${senderName} 留了一段想对你说的话，还有一份小礼物，等你亲手打开。`
+        : `${senderName} 留了一段想对你说的话。`,
     },
     unlock: toUnlockConfig(draft),
     memory,
     gift: {
+      kind: draft.gift.kind,
       title: draft.gift.title.trim(),
       description: draft.gift.description.trim(),
       externalUrl: draft.gift.externalUrl.trim(),

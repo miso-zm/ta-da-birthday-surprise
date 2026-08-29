@@ -86,7 +86,14 @@ export type MemoryContent =
   | { kind: "card"; card: CardContent }
   | { kind: "scrapbook"; scrapbook: ScrapbookContent };
 
+export type GiftKind = "none" | "link";
+
 export type GiftContent = {
+  kind: GiftKind;
+  /**
+   * Retained only to keep existing local drafts readable during the Sender
+   * transition. The new Gift UI and Receiver reveal do not display them.
+   */
   title: string;
   description: string;
   externalUrl: string;
@@ -193,4 +200,8 @@ export function isHttpsUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function hasGiftLink(gift: GiftContent): boolean {
+  return gift.kind === "link" && isHttpsUrl(gift.externalUrl);
 }
