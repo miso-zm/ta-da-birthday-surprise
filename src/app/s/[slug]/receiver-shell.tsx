@@ -30,12 +30,11 @@ function PreviewComplete({
   return (
     <section className="w-full px-1 py-2">
       <div className="paper-surface paper-fold p-6 text-center">
-        <div
-          aria-hidden="true"
-          className="mx-auto grid size-20 place-items-center rounded-full bg-[color-mix(in_srgb,var(--coral)_14%,white)] text-sm font-bold text-[var(--ink)]"
-        >
-          Ta-da!
-        </div>
+        <img
+          src="/assets/share/tada-share-complete-v1.png"
+          alt="Tada 抱着珊瑚色礼物，开心地送出惊喜"
+          className="mx-auto size-24 rounded-[1.5rem] object-cover shadow-[var(--shadow-card)]"
+        />
         <h1 className="mt-5 text-2xl font-bold text-[var(--ink)]">
           这份惊喜已经准备好了
         </h1>
