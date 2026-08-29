@@ -29,261 +29,65 @@
   position: fixed;
   z-index: 2;
   inset: 0;
-  overflow: visible;
+  overflow: hidden;
   pointer-events: none;
 }
 
 .confettiPiece {
-  --confetti-mid-x: 0;
-  --confetti-mid-y: 5rem;
-  --confetti-end-x: 0;
-  --confetti-end-y: 10rem;
-  --confetti-mid-turn: 70deg;
-  --confetti-end-turn: 115deg;
-  --confetti-delay: 0ms;
-
   position: absolute;
   top: 0;
-  left: 50%;
-  width: 10px;
-  height: 14px;
+  left: var(--confetti-left);
+  width: var(--confetti-width);
+  height: var(--confetti-height);
   border-radius: 3px;
   background: currentColor;
+  color: var(--confetti-color);
   opacity: 0;
-  animation: gift-confetti-float 1180ms cubic-bezier(0.24, 0.5, 0.34, 1) var(--confetti-delay) both;
+  transform-origin: center;
+  animation: gift-confetti-fall var(--confetti-duration) linear var(--confetti-delay) both;
 }
 
-.confettiPiece:nth-child(1) {
-  --confetti-mid-x: -7px;
-  --confetti-mid-y: 76px;
-  --confetti-end-x: 14px;
-  --confetti-end-y: 154px;
-  --confetti-mid-turn: -46deg;
-  --confetti-end-turn: 112deg;
-
-  left: 20%;
-  color: #fa907b;
-}
-
-.confettiPiece:nth-child(2) {
-  --confetti-mid-x: 8px;
-  --confetti-mid-y: 94px;
-  --confetti-end-x: -16px;
-  --confetti-end-y: 190px;
-  --confetti-mid-turn: 42deg;
-  --confetti-end-turn: -96deg;
-  --confetti-delay: 20ms;
-
-  left: 25%;
-  width: 12px;
-  height: 12px;
+.confettiPiece[data-shape="dot"] {
   border-radius: 50%;
-  color: #ffbe3d;
 }
 
-.confettiPiece:nth-child(3) {
-  --confetti-mid-x: -6px;
-  --confetti-mid-y: 66px;
-  --confetti-end-x: 12px;
-  --confetti-end-y: 132px;
-  --confetti-mid-turn: -38deg;
-  --confetti-end-turn: 88deg;
-  --confetti-delay: 40ms;
-
-  left: 31%;
-  width: 11px;
-  color: #7ed9c8;
-}
-
-.confettiPiece:nth-child(4) {
-  --confetti-mid-x: 10px;
-  --confetti-mid-y: 106px;
-  --confetti-end-x: -18px;
-  --confetti-end-y: 214px;
-  --confetti-mid-turn: 54deg;
-  --confetti-end-turn: -124deg;
-  --confetti-delay: 60ms;
-
-  left: 36%;
-  height: 13px;
-  color: #a8d8ff;
-}
-
-.confettiPiece:nth-child(5) {
-  --confetti-mid-x: -8px;
-  --confetti-mid-y: 86px;
-  --confetti-end-x: 18px;
-  --confetti-end-y: 172px;
-  --confetti-mid-turn: -48deg;
-  --confetti-end-turn: 118deg;
-  --confetti-delay: 80ms;
-
-  left: 42%;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  color: #c7b1ff;
-}
-
-.confettiPiece:nth-child(6) {
-  --confetti-mid-x: 7px;
-  --confetti-mid-y: 100px;
-  --confetti-end-x: -14px;
-  --confetti-end-y: 202px;
-  --confetti-mid-turn: 36deg;
-  --confetti-end-turn: -84deg;
-  --confetti-delay: 100ms;
-
-  left: 47%;
-  width: 12px;
-  color: #fa907b;
-}
-
-.confettiPiece:nth-child(7) {
-  --confetti-mid-x: -10px;
-  --confetti-mid-y: 72px;
-  --confetti-end-x: 20px;
-  --confetti-end-y: 146px;
-  --confetti-mid-turn: -44deg;
-  --confetti-end-turn: 104deg;
-  --confetti-delay: 120ms;
-
-  left: 53%;
-  width: 17px;
-  height: 17px;
+.confettiPiece[data-shape="star"] {
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 56%, 79% 94%, 50% 72%, 21% 94%, 32% 56%, 2% 35%, 39% 35%);
-  color: #ffbe3d;
 }
 
-.confettiPiece:nth-child(8) {
-  --confetti-mid-x: 12px;
-  --confetti-mid-y: 110px;
-  --confetti-end-x: -19px;
-  --confetti-end-y: 220px;
-  --confetti-mid-turn: 58deg;
-  --confetti-end-turn: -132deg;
-  --confetti-delay: 140ms;
-
-  left: 58%;
-  color: #7ed9c8;
-}
-
-.confettiPiece:nth-child(9) {
-  --confetti-mid-x: -7px;
-  --confetti-mid-y: 92px;
-  --confetti-end-x: 15px;
-  --confetti-end-y: 184px;
-  --confetti-mid-turn: -34deg;
-  --confetti-end-turn: 86deg;
-  --confetti-delay: 160ms;
-
-  left: 63%;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  color: #a8d8ff;
-}
-
-.confettiPiece:nth-child(10) {
-  --confetti-mid-x: 9px;
-  --confetti-mid-y: 80px;
-  --confetti-end-x: -18px;
-  --confetti-end-y: 160px;
-  --confetti-mid-turn: 48deg;
-  --confetti-end-turn: -108deg;
-  --confetti-delay: 180ms;
-
-  left: 69%;
-  width: 12px;
-  color: #c7b1ff;
-}
-
-.confettiPiece:nth-child(11) {
-  --confetti-mid-x: -6px;
-  --confetti-mid-y: 104px;
-  --confetti-end-x: 12px;
-  --confetti-end-y: 208px;
-  --confetti-mid-turn: -52deg;
-  --confetti-end-turn: 122deg;
-  --confetti-delay: 200ms;
-
-  left: 74%;
-  height: 13px;
-  color: #fa907b;
-}
-
-.confettiPiece:nth-child(12) {
-  --confetti-mid-x: 10px;
-  --confetti-mid-y: 68px;
-  --confetti-end-x: -20px;
-  --confetti-end-y: 138px;
-  --confetti-mid-turn: 40deg;
-  --confetti-end-turn: -92deg;
-  --confetti-delay: 220ms;
-
-  left: 78%;
-  width: 11px;
-  color: #ffbe3d;
-}
-
-.confettiPiece:nth-child(13) {
-  --confetti-mid-x: -8px;
-  --confetti-mid-y: 98px;
-  --confetti-end-x: 16px;
-  --confetti-end-y: 196px;
-  --confetti-mid-turn: -36deg;
-  --confetti-end-turn: 96deg;
-  --confetti-delay: 240ms;
-
-  left: 82%;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  color: #7ed9c8;
-}
-
-.confettiPiece:nth-child(14) {
-  --confetti-mid-x: 7px;
-  --confetti-mid-y: 88px;
-  --confetti-end-x: -13px;
-  --confetti-end-y: 176px;
-  --confetti-mid-turn: 50deg;
-  --confetti-end-turn: -116deg;
-  --confetti-delay: 260ms;
-
-  left: 85%;
-  color: #a8d8ff;
-}
-
-@keyframes gift-confetti-float {
+@keyframes gift-confetti-fall {
   0% {
     opacity: 0;
-    transform: translate(-50%, -140%) translate3d(0, 0, 0) rotate(0deg) scale(0.82);
+    transform: translate3d(-50%, var(--confetti-start-y), 0) rotate(0deg) scale(0.86);
   }
 
-  12% {
+  18% {
     opacity: 1;
+    transform: translate3d(-50%, calc(var(--confetti-start-y) + 9vh), 0) rotate(0deg) scale(0.94);
   }
 
-  56% {
-    opacity: 0.94;
-    transform: translate(-50%, -140%) translate3d(var(--confetti-mid-x), var(--confetti-mid-y), 0) rotate(var(--confetti-mid-turn)) scale(1);
+  52% {
+    opacity: 0.96;
+    transform: translate3d(calc(-50% + var(--confetti-mid-x)), var(--confetti-mid-y), 0) rotate(var(--confetti-mid-turn)) scale(1);
   }
 
   100% {
     opacity: 0;
-    transform: translate(-50%, -140%) translate3d(var(--confetti-end-x), var(--confetti-end-y), 0) rotate(var(--confetti-end-turn)) scale(0.94);
+    transform: translate3d(calc(-50% + var(--confetti-end-x)), var(--confetti-end-y), 0) rotate(var(--confetti-end-turn)) scale(0.94);
   }
 }
 
 .title {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.875rem, 8.2vw, 2.25rem);
-  font-weight: var(--font-weight-bold);
-  line-height: 1.18;
-  letter-spacing: -0.035em;
-  text-align: center;
+  width: min(85vw, 21rem);
+  max-width: 100%;
+  margin: 0 auto;
+  line-height: 0;
+}
+
+.receiptTitle {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .receiptHero {
