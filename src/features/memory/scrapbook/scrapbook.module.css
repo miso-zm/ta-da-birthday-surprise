@@ -1,13 +1,27 @@
+.posterMount {
+  width: calc(100% - 4px);
+  aspect-ratio: 3 / 4;
+  margin: 14px 2px 0;
+  filter:
+    drop-shadow(0 5px 7px rgb(84 65 48 / 14%))
+    drop-shadow(0 1px 1px rgb(84 65 48 / 8%));
+}
+
 .poster {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
-  margin-top: 14px;
+  height: 100%;
   overflow: hidden;
-  border-radius: 22px;
-  background: #f5ead7;
-  box-shadow: 0 5px 0 color-mix(in srgb, var(--line) 42%, transparent);
+  background: #f3eee4;
   isolation: isolate;
+  mask-image: url("./assets/poster-torn-edge-mask.png");
+  mask-position: center 48%;
+  mask-repeat: no-repeat;
+  mask-size: 105% 109%;
+  -webkit-mask-image: url("./assets/poster-torn-edge-mask.png");
+  -webkit-mask-position: center 48%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 105% 109%;
 }
 
 .layer,
@@ -79,6 +93,17 @@
   font-size: clamp(13px, 3.85vw, 15px);
 }
 
+.posterCompanion {
+  position: absolute;
+  z-index: 8;
+  right: 0.9%;
+  bottom: 1.8%;
+  display: block;
+  width: 13%;
+  height: auto;
+  pointer-events: none;
+}
+
 .helperText {
   margin: 14px 8px 0;
   color: var(--muted);
@@ -126,10 +151,6 @@
 }
 
 @media (max-width: 374px) {
-  .poster {
-    border-radius: 19px;
-  }
-
   .photoNotice {
     grid-template-columns: 1fr;
   }

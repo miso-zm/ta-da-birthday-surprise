@@ -31,6 +31,7 @@ import twoOuterDoodles from "./assets/d044/two/outer-doodles-stars.png";
 import twoPhotoFrames from "./assets/d044/two/photo-frames.png";
 import twoPhotoMaskOne from "./assets/d044/two/photo-slot-1-mask.png";
 import twoPhotoMaskTwo from "./assets/d044/two/photo-slot-2-mask.png";
+import tadaPosterCompanion from "./assets/tada-poster-companion.png";
 import {
   getImageFailureKey,
   getPhotoTransformStyle,
@@ -143,50 +144,60 @@ export function Scrapbook({ scrapbook, onContinue }: ScrapbookProps) {
 
   return (
     <StageCard label="我们的回忆手帐">
-      <article
-        className={styles.poster}
-        aria-label={`${template.label}回忆手帐，共 ${template.geometry.length} 个照片位`}
-      >
-        <img className={`${styles.layer} ${styles.backgroundLayer}`} src={template.assets.background.src} alt="" aria-hidden="true" />
+      <div className={styles.posterMount}>
+        <article
+          className={styles.poster}
+          aria-label={`${template.label}回忆手帐，共 ${template.geometry.length} 个照片位`}
+        >
+          <img className={`${styles.layer} ${styles.backgroundLayer}`} src={template.assets.background.src} alt="" aria-hidden="true" />
 
-        {template.geometry.map((geometry, index) => {
-          const slot = scrapbook.slots[index];
-          const failureKey = slot ? getImageFailureKey(slot) : "";
-          const hasPhoto = Boolean(slot?.imageUrl) && !failedImages.has(failureKey);
-          const source = hasPhoto ? slot?.imageUrl : placeholderPaper.src;
-          const mask = template.assets.masks[index];
+          {template.geometry.map((geometry, index) => {
+            const slot = scrapbook.slots[index];
+            const failureKey = slot ? getImageFailureKey(slot) : "";
+            const hasPhoto = Boolean(slot?.imageUrl) && !failedImages.has(failureKey);
+            const source = hasPhoto ? slot?.imageUrl : placeholderPaper.src;
+            const mask = template.assets.masks[index];
 
-          return (
-            <div
-              key={`${scrapbook.templateId}-${index}`}
-              className={styles.maskedPhotoLayer}
-              style={layerStyle(mask.src)}
-            >
-              <img
-                className={styles.photo}
-                src={source}
-                alt={hasPhoto ? `第 ${index + 1} 张回忆照片` : ""}
-                aria-hidden={!hasPhoto}
-                draggable={false}
-                style={photoStyle(hasPhoto ? slot : undefined, geometry)}
-                onError={hasPhoto && slot
-                  ? () => setFailedImages((current) => new Set(current).add(getImageFailureKey(slot)))
-                  : undefined}
-              />
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={`${scrapbook.templateId}-${index}`}
+                className={styles.maskedPhotoLayer}
+                style={layerStyle(mask.src)}
+              >
+                <img
+                  className={styles.photo}
+                  src={source}
+                  alt={hasPhoto ? `第 ${index + 1} 张回忆照片` : ""}
+                  aria-hidden={!hasPhoto}
+                  draggable={false}
+                  style={photoStyle(hasPhoto ? slot : undefined, geometry)}
+                  onError={hasPhoto && slot
+                    ? () => setFailedImages((current) => new Set(current).add(getImageFailureKey(slot)))
+                    : undefined}
+                />
+              </div>
+            );
+          })}
 
-        <img className={`${styles.layer} ${styles.framesLayer}`} src={template.assets.frames.src} alt="" aria-hidden="true" />
-        <img className={`${styles.layer} ${styles.foregroundLayer}`} src={template.assets.foreground.src} alt="" aria-hidden="true" />
-        <img className={`${styles.layer} ${styles.outerLayer}`} src={template.assets.outerDoodles.src} alt="" aria-hidden="true" />
-        <img className={`${styles.layer} ${styles.descriptionPaperLayer}`} src={template.assets.descriptionPaper.src} alt="" aria-hidden="true" />
-        {scrapbook.description ? (
-          <p className={`${styles.description} ${styles[`description${template.geometry.length}`]}`}>
-            {scrapbook.description}
-          </p>
-        ) : null}
-      </article>
+          <img className={`${styles.layer} ${styles.framesLayer}`} src={template.assets.frames.src} alt="" aria-hidden="true" />
+          <img className={`${styles.layer} ${styles.foregroundLayer}`} src={template.assets.foreground.src} alt="" aria-hidden="true" />
+          <img className={`${styles.layer} ${styles.outerLayer}`} src={template.assets.outerDoodles.src} alt="" aria-hidden="true" />
+          <img className={`${styles.layer} ${styles.descriptionPaperLayer}`} src={template.assets.descriptionPaper.src} alt="" aria-hidden="true" />
+          {scrapbook.description ? (
+            <p className={`${styles.description} ${styles[`description${template.geometry.length}`]}`}>
+              {scrapbook.description}
+            </p>
+          ) : null}
+          {scrapbook.templateId === "one-photo" ? (
+            <img
+              className={styles.posterCompanion}
+              src={tadaPosterCompanion.src}
+              alt=""
+              aria-hidden="true"
+            />
+          ) : null}
+        </article>
+      </div>
 
       {failedSlots.length > 0 ? (
         <div className={styles.photoNotice} role="status" aria-live="polite">
