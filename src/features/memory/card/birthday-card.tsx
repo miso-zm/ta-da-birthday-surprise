@@ -160,7 +160,7 @@ export function BirthdayCard({ recipient, sender, card, onContinue }: BirthdayCa
       ) : (
         <CreamWishesCard recipientName={recipientName} signature={signature} message={card.message} />
       )}
-      <PrimaryButton onClick={onContinue}>继续看我们的回忆</PrimaryButton>
+      <PrimaryButton onClick={onContinue}>继续拆礼物</PrimaryButton>
     </StageCard>
   );
 }
