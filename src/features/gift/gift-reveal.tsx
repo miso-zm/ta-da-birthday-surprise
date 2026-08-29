@@ -17,7 +17,7 @@ type GiftRevealProps = {
   onContinue: () => void;
 };
 
-const CONFETTI_PIECES = Array.from({ length: 6 }, (_, index) => index);
+const CONFETTI_PIECES = Array.from({ length: 14 }, (_, index) => index);
 
 function PlatformIcon({ platform }: { platform: GiftLinkPlatformId }) {
   if (platform === "taobao") {
