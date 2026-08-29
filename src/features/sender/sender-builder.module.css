@@ -700,7 +700,7 @@
   position: relative;
   overflow: hidden;
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
@@ -720,63 +720,8 @@
   line-height: 1.5;
 }
 
-.tadaFace {
-  position: relative;
-  width: 48px;
-  height: 42px;
-  display: block;
-  border: 1px solid var(--pencil);
-  border-radius: 46% 52% 44% 47%;
-  background: #fff6ec;
-}
-
-.tadaFace::before,
-.tadaFace::after {
-  content: "";
-  position: absolute;
-  top: -7px;
-  width: 11px;
-  height: 12px;
-  border: 1px solid var(--pencil);
-  background: #b7e1d2;
-}
-
-.tadaFace::before {
-  left: 7px;
-  border-radius: 70% 30% 45% 20%;
-  transform: rotate(-14deg);
-}
-
-.tadaFace::after {
-  right: 6px;
-  height: 9px;
-  border-radius: 35% 70% 20% 45%;
-  transform: rotate(18deg);
-}
-
-.tadaFace i,
-.tadaFace b {
-  position: absolute;
-  z-index: 1;
-}
-
-.tadaFace i {
-  top: 17px;
-  left: 13px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--line);
-  box-shadow: 16px 0 var(--line), -4px 8px 0 2px #ffc1b6, 24px 8px 0 2px #ffc1b6;
-}
-
-.tadaFace b {
-  left: 20px;
-  top: 24px;
-  width: 9px;
-  height: 5px;
-  border-bottom: 2px solid var(--line);
-  border-radius: 50%;
+.companionArt {
+  width: 56px;
 }
 
 .photoHeading {

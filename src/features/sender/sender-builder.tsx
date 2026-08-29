@@ -37,6 +37,7 @@ import {
   loadSenderDraft,
   saveSenderDraft,
 } from "../../lib/sender-draft-storage";
+import { TadaCompanion } from "../../components/tada-companion/tada-companion";
 
 import { MobilePicker } from "./mobile-picker";
 import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.png";
@@ -463,13 +464,10 @@ function ErrorPanel({ errors }: { errors: string[] }) {
   );
 }
 
-function TadaCompanion({ message }: { message: string }) {
+function TadaMessage({ message }: { message: string }) {
   return (
     <div className={styles.companion} aria-label={`Tada 提示：${message}`}>
-      <span className={styles.tadaFace} aria-hidden="true">
-        <i />
-        <b />
-      </span>
+      <TadaCompanion className={styles.companionArt} />
       <p>{message}</p>
     </div>
   );
@@ -1159,7 +1157,7 @@ export function SenderBuilder({
     return (
       <main className={styles.centeredScreen}>
         <section className={styles.recoveryCard} aria-labelledby="recovery-title">
-          <TadaCompanion message="上次留下的心意，我已经替你收好啦。" />
+          <TadaMessage message="上次留下的心意，我已经替你收好啦。" />
           <p className={styles.eyebrow}>上次的惊喜还在这里</p>
           <h1 id="recovery-title">要继续完成它吗？</h1>
           <p className={styles.recoveryCopy}>
@@ -1400,7 +1398,7 @@ export function SenderBuilder({
                   </p>
                 </fieldset>
               ) : (
-                <TadaCompanion
+                <TadaMessage
                   message={
                     draft.unlock.kind === "rps" || draft.unlock.kind === "blow-candles"
                       ? "选好就行，不需要再填写别的内容。"
@@ -1618,7 +1616,7 @@ export function SenderBuilder({
                   }))}
                 />
               </Field>
-              <TadaCompanion message="链接不会自己跳开，等对方拆开礼物后再决定要不要看。" />
+              <TadaMessage message="链接不会自己跳开，等对方拆开礼物后再决定要不要看。" />
             </>
           ) : null}
 
@@ -1644,7 +1642,7 @@ export function SenderBuilder({
                   <div><dt>礼物</dt><dd>{draft.gift.title}</dd></div>
                 </dl>
               </section>
-              <TadaCompanion message="预览会带你看完整流程，不用走完也能回来继续修改。" />
+              <TadaMessage message="预览会带你看完整流程，不用走完也能回来继续修改。" />
               <p className={styles.honestPreviewNote}>
                 现在还是本地预览，公开分享链接会在正式发布时再生成。
               </p>
