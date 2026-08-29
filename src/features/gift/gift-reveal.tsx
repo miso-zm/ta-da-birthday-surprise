@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GiftContent } from "@/lib/surprise-contract";
 import { isHttpsUrl } from "@/lib/surprise-contract";
 import { PrimaryButton, StageCard } from "@/features/shared/placeholders";
+import styles from "./gift-reveal.module.css";
 
 type GiftRevealProps = {
   gift: GiftContent;
@@ -11,29 +12,79 @@ type GiftRevealProps = {
   onContinue: () => void;
 };
 
+type RevealPhase = "closed" | "opening" | "revealed";
+
 export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
-  const [revealed, setRevealed] = useState(false);
+  const [phase, setPhase] = useState<RevealPhase>("closed");
+  const timersRef = useRef<number[]>([]);
   const validUrl = isHttpsUrl(gift.externalUrl);
+  const revealed = phase === "revealed";
+  const opening = phase === "opening";
+
+  useEffect(() => () => {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+  }, []);
 
   const reveal = () => {
-    if (revealed) {
+    if (phase !== "closed") {
       return;
     }
 
-    setRevealed(true);
     onReveal();
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPhase("revealed");
+      return;
+    }
+
+    setPhase("opening");
+    timersRef.current = [
+      window.setTimeout(() => setPhase("revealed"), 2600),
+    ];
   };
 
   return (
     <StageCard label="最后一份小惊喜">
       {!revealed ? (
         <>
-          <div className="paper-surface mx-auto mt-8 grid size-44 place-items-center text-center text-2xl font-bold text-[var(--ink)]">Ta-da!</div>
+          <div
+            className={styles.scene}
+            data-opening={opening}
+            role="img"
+            aria-label={opening ? "礼物正在打开" : "一份还没打开的小礼物"}
+          >
+            <img
+              src="/assets/gift/gift-box-closed-v1.png"
+              alt=""
+              aria-hidden="true"
+              className={styles.closedBox}
+            />
+            <img
+              src="/assets/gift/gift-box-lid-v1.png"
+              alt=""
+              aria-hidden="true"
+              className={styles.lid}
+            />
+            <img
+              src="/assets/gift/tada-gift-pop-v1.png"
+              alt=""
+              aria-hidden="true"
+              className={styles.tadaPop}
+            />
+          </div>
           <h1 className="mt-7 text-center text-3xl font-bold tracking-[-0.04em]">还有一份小礼物</h1>
-          <PrimaryButton onClick={reveal}>拆开礼物</PrimaryButton>
+          <PrimaryButton onClick={reveal} disabled={opening}>
+            {opening ? "正在拆开…" : "拆开礼物"}
+          </PrimaryButton>
         </>
       ) : (
         <>
+          <div className={styles.completeScene}>
+            <img
+              src="/assets/gift/tada-gift-reveal-complete-v2.png"
+              alt="Tada 从打开的礼盒中探出头来"
+            />
+          </div>
           <div className="paper-surface mt-5 rounded-[var(--radius-md)] p-5 text-center">
             {validUrl ? (
               <>
