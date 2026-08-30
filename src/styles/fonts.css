@@ -1,0 +1,23 @@
+@font-face {
+  font-family: "GenSenMaruGothic TW TTF";
+  src: url("/fonts/gensen-maru-gothic-tw/gensen-maru-gothic-tw-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GenSenMaruGothic TW TTF";
+  src: url("/fonts/gensen-maru-gothic-tw/gensen-maru-gothic-tw-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GenSenMaruGothic TW TTF";
+  src: url("/fonts/gensen-maru-gothic-tw/gensen-maru-gothic-tw-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
