@@ -157,6 +157,19 @@ test("rejects invalid, credentialed, and private-network gift URLs", () => {
   assert.throws(() => validateGiftUrl("https://127.0.0.1/redeem"));
   assert.throws(() => validateGiftUrl("https://192.168.1.2/redeem"));
   assert.throws(() => validateGiftUrl("https://[::1]/redeem"));
+  for (const address of [
+    "::ffff:127.0.0.1",
+    "::ffff:10.20.30.40",
+    "::ffff:172.16.0.1",
+    "::ffff:172.31.255.255",
+    "::ffff:192.168.1.2",
+    "::ffff:100.64.0.1",
+    "::ffff:169.254.1.2",
+    "::ffff:224.0.0.1",
+  ]) {
+    assert.throws(() => validateGiftUrl(`https://[${address}]/redeem`), address);
+  }
+  assert.equal(validateGiftUrl("https://[::ffff:8.8.8.8]/redeem"), "https://[::ffff:808:808]/redeem");
   assert.equal(validateGiftUrl("https://gift.example.com/redeem?id=1"), "https://gift.example.com/redeem?id=1");
 });
 

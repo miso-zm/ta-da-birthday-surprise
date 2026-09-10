@@ -39,9 +39,18 @@ function validBirthday(value: string): boolean {
   return date.getMonth() === month - 1 && date.getDate() === day;
 }
 
-function isPrivateIpv4(hostname: string): boolean {
-  const parts = hostname.split(".").map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part))) return false;
+function ipv4Octets(address: string): number[] | null {
+  const parts = address.split(".");
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255)
+  ) {
+    return null;
+  }
+  return parts.map(Number);
+}
+
+function isPrivateIpv4Octets(parts: number[]): boolean {
   const [first, second] = parts;
   return (
     first === 0 ||
@@ -55,17 +64,46 @@ function isPrivateIpv4(hostname: string): boolean {
   );
 }
 
+function isPrivateIpv4(hostname: string): boolean {
+  const parts = ipv4Octets(hostname);
+  return parts ? isPrivateIpv4Octets(parts) : false;
+}
+
+function parseIpv6Bytes(address: string): Uint8Array | null {
+  let normalized = address.replace(/^\[|\]$/g, "").toLowerCase();
+  if (normalized.includes(".")) {
+    const lastColon = normalized.lastIndexOf(":");
+    const embedded = ipv4Octets(normalized.slice(lastColon + 1));
+    if (lastColon < 0 || !embedded) return null;
+    normalized = `${normalized.slice(0, lastColon)}:${((embedded[0] << 8) | embedded[1]).toString(16)}:${((embedded[2] << 8) | embedded[3]).toString(16)}`;
+  }
+
+  const halves = normalized.split("::");
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0].split(":") : [];
+  const right = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  if ([...left, ...right].some((part) => !/^[0-9a-f]{1,4}$/.test(part))) return null;
+
+  const omitted = 8 - left.length - right.length;
+  if ((halves.length === 1 && omitted !== 0) || (halves.length === 2 && omitted < 1)) return null;
+  const words = [...left, ...Array.from({ length: omitted }, () => "0"), ...right].map((part) => Number.parseInt(part, 16));
+  if (words.length !== 8) return null;
+
+  return Uint8Array.from(words.flatMap((word) => [word >> 8, word & 0xff]));
+}
+
 function isPrivateIpv6(hostname: string): boolean {
-  const normalized = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  const bytes = parseIpv6Bytes(hostname);
+  if (!bytes) return false;
+  const firstTwelveZero = bytes.slice(0, 12).every((byte) => byte === 0);
+  const mappedIpv4 = bytes.slice(0, 10).every((byte) => byte === 0) && bytes[10] === 0xff && bytes[11] === 0xff;
   return (
-    normalized === "::" ||
-    normalized === "::1" ||
-    normalized.startsWith("fc") ||
-    normalized.startsWith("fd") ||
-    /^fe[89ab]/.test(normalized) ||
-    normalized.startsWith("::ffff:127.") ||
-    normalized.startsWith("::ffff:10.") ||
-    normalized.startsWith("::ffff:192.168.")
+    bytes.every((byte) => byte === 0) ||
+    (firstTwelveZero && bytes[12] === 0 && bytes[13] === 0 && bytes[14] === 0 && bytes[15] === 1) ||
+    (bytes[0] & 0xfe) === 0xfc ||
+    (bytes[0] === 0xfe && (bytes[1] & 0xc0) === 0x80) ||
+    bytes[0] === 0xff ||
+    ((mappedIpv4 || firstTwelveZero) && isPrivateIpv4Octets(Array.from(bytes.slice(12))))
   );
 }
 

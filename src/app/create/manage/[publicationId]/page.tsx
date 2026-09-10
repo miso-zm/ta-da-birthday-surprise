@@ -26,7 +26,7 @@ export default async function ManagePublicationPage({
         <section className="paper-surface paper-fold w-full p-6 text-center">
           <h1 className="text-3xl font-bold tracking-[-0.04em]">无法管理这份惊喜</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[var(--muted)]">
-            请使用当初发布它的浏览器打开管理入口。清除浏览器数据后，P0 暂时无法找回管理权。
+            请使用当初发布它的浏览器打开管理入口。清除浏览器数据后，暂时无法找回管理权。
           </p>
         </section>
       </main>
