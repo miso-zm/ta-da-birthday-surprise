@@ -187,6 +187,13 @@ export type SenderPreviewResult =
       firstIncompleteStep: SenderStep;
     };
 
+export type PublishedSurpriseLinks = {
+  publicationId: string;
+  shareUrl: string;
+  manageUrl: string;
+  expiresAt: string;
+};
+
 export type ReceiverStep =
   | "opening"
   | "unlock"
@@ -196,7 +203,13 @@ export type ReceiverStep =
 
 export function isHttpsUrl(value: string): boolean {
   try {
-    return new URL(value).protocol === "https:";
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      !url.username &&
+      !url.password &&
+      !/[\u0000-\u001f\u007f]/.test(value)
+    );
   } catch {
     return false;
   }

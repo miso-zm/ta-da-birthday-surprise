@@ -1187,6 +1187,28 @@
   text-align: right;
 }
 
+.secondaryAction {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  border: 1px solid var(--ui-line);
+  border-radius: var(--radius-round);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.publishError {
+  margin: 14px 0 0;
+  color: var(--color-danger);
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.6;
+}
+
 .footer {
   position: relative;
   z-index: 5;

@@ -83,8 +83,8 @@ const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
     intro: "没有也没关系，生日卡或手帐本身就是一份礼物。",
   },
   publish: {
-    title: "先看看对方会收到什么",
-    intro: "这是本地预览，现在还不会生成公开链接。",
+    title: "确认后发布这份惊喜",
+    intro: "可以先预览；发布后会生成一个专属查看链接。",
   },
 };
 
@@ -182,6 +182,7 @@ export type SenderBuilderProps = {
   initialDraft?: SenderDraft;
   onDraftChange?: (draft: SenderDraft) => void;
   onPreview: (preview: SurprisePreview, draft: SenderDraft) => void;
+  onPublish: (preview: SurprisePreview, draft: SenderDraft) => Promise<void>;
 };
 
 function stepIndex(step: SenderStep): number {
@@ -209,8 +210,8 @@ function formatSavedTime(value: string): string {
 
 function readImageFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("请选择图片文件。"));
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      reject(new Error("请选择 JPG、PNG 或 WebP 图片。"));
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
@@ -688,6 +689,7 @@ export function SenderBuilder({
   initialDraft,
   onDraftChange,
   onPreview,
+  onPublish,
 }: SenderBuilderProps) {
   const [draft, setDraft] = useState<SenderDraft>(() =>
     initialDraft ?? createDefaultSenderDraft(),
@@ -707,6 +709,8 @@ export function SenderBuilder({
   const [pendingTemplateId, setPendingTemplateId] = useState<ScrapbookTemplateId | null>(null);
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [cropError, setCropError] = useState("");
+  const [publishState, setPublishState] = useState<"idle" | "publishing" | "error">("idle");
+  const [publishError, setPublishError] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollArea = useRef<HTMLDivElement | null>(null);
   const stepHeading = useRef<HTMLHeadingElement | null>(null);
@@ -879,6 +883,32 @@ export function SenderBuilder({
       setSaveError("当前浏览器无法保存草稿，但不影响继续预览。");
     }
     onPreview(result.preview, draft);
+  }
+
+  async function publishSurprise() {
+    const result = senderDraftToPreview(draft);
+    if (!result.ok) {
+      setCurrentStep(result.firstIncompleteStep);
+      setShowErrors(true);
+      return;
+    }
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    onDraftChangeRef.current?.(draft);
+    const storage = getBrowserDraftStorage();
+    if (storage) {
+      const saveResult = saveSenderDraft(storage, draft);
+      setSaveState(saveResult.ok ? "saved" : "error");
+      setSaveError(saveResult.ok ? "" : saveResult.reason);
+    }
+    setPublishState("publishing");
+    setPublishError("");
+    try {
+      await onPublish(result.preview, draft);
+      setPublishState("idle");
+    } catch (error) {
+      setPublishState("error");
+      setPublishError(error instanceof Error ? error.message : "发布没有完成，草稿已保留。");
+    }
   }
 
   function updateBirthday(nextMonth: number, nextDay: number) {
@@ -1520,7 +1550,7 @@ export function SenderBuilder({
                 {missingScrapbookSlots > 0 ? (
                   <label className={styles.photoSelectButton}>
                     {draft.scrapbook.slots.length === 1 ? "选择一张照片" : `选择照片（最多 ${missingScrapbookSlots} 张）`}
-                    <input type="file" accept="image/*" multiple={draft.scrapbook.slots.length > 1} onChange={addPhotos} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple={draft.scrapbook.slots.length > 1} onChange={addPhotos} />
                   </label>
                 ) : (
                   <p className={styles.photoReadyHint}>需要更换时，点下方预览中的对应照片。</p>
@@ -1538,7 +1568,7 @@ export function SenderBuilder({
                         <span>照片 {index + 1}：{slotError}</span>
                         <label>
                           重新选择
-                          <input type="file" accept="image/*" onChange={(event) => replacePhoto(index, event)} />
+                          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => replacePhoto(index, event)} />
                         </label>
                       </div>
                     );
@@ -1618,7 +1648,7 @@ export function SenderBuilder({
 
               {draft.gift.kind === "link" ? (
                 <>
-                  <Field label="礼物领取链接" hint="淘宝、京东、微信小店等链接都可以">
+                  <Field label="礼物领取链接" hint="仅填写官方 HTTPS 商品或领取链接">
                     <input
                       type="url"
                       inputMode="url"
@@ -1632,7 +1662,7 @@ export function SenderBuilder({
                       }))}
                     />
                   </Field>
-                  <TadaMessage message="链接会等 TA 拆开礼盒后，再由 TA 自己打开。" />
+                  <TadaMessage message="不要填写地址、订单号、付款信息或账号凭证。链接由 TA 拆开礼盒后自己打开。" />
                 </>
               ) : null}
             </>
@@ -1659,7 +1689,11 @@ export function SenderBuilder({
                   </div>
                 </dl>
               </section>
-              <TadaMessage message="预览会带你看完整流程，不用走完也能回来继续修改。" />
+              <button type="button" className={styles.secondaryAction} onClick={openPreview}>
+                先预览完整流程
+              </button>
+              <TadaMessage message="发布后会生成一份不可变快照和新链接。草稿依然保留，之后修改会生成另一个链接。" />
+              {publishError ? <p className={styles.publishError} role="alert">{publishError}</p> : null}
             </>
           ) : null}
         </section>
@@ -1670,13 +1704,14 @@ export function SenderBuilder({
           type="button"
           className={styles.primaryButton}
           onClick={currentStep === "publish"
-            ? openPreview
+            ? publishSurprise
             : currentStep === "memory" && memoryScreen === "scrapbook"
               ? completeScrapbook
               : goNext}
+          disabled={publishState === "publishing"}
         >
           {currentStep === "publish"
-            ? "保存并预览"
+            ? publishState === "publishing" ? "正在发布…" : "发布惊喜"
             : currentStep === "memory" && memoryScreen === "scrapbook"
               ? "完成心意"
               : "继续"}
@@ -1749,7 +1784,7 @@ export function SenderBuilder({
               </button>
               <label>
                 替换照片
-                <input type="file" accept="image/*" onChange={replaceCropPhoto} />
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={replaceCropPhoto} />
               </label>
             </div>
             <button
