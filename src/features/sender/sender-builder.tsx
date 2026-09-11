@@ -39,6 +39,7 @@ import {
   saveSenderDraft,
 } from "../../lib/sender-draft-storage";
 import { TadaCompanion } from "../../components/tada-companion/tada-companion";
+import { PrimaryActionDecoration } from "../../components/primary-action-decoration/primary-action-decoration";
 
 import { MobilePicker } from "./mobile-picker";
 import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.png";
@@ -1179,10 +1180,7 @@ export function SenderBuilder({
               sizes="270px"
               className={styles.welcomeButtonArtwork}
             />
-            <span className={styles.welcomeStarField} aria-hidden="true">
-              <span className={styles.welcomeStarSmall} />
-              <span className={styles.welcomeStarLarge} />
-            </span>
+            <PrimaryActionDecoration />
           </button>
         </section>
       </main>
@@ -1205,7 +1203,8 @@ export function SenderBuilder({
             从第 {stepIndex(incomplete) + 1} 步继续
           </p>
           <button type="button" className={styles.primaryButton} onClick={resumeDraft}>
-            继续编辑
+            <PrimaryActionDecoration />
+            <span className={styles.primaryButtonLabel}>继续编辑</span>
           </button>
           <button type="button" className={styles.textButton} onClick={startFresh}>
             不用了，重新开始
@@ -1710,11 +1709,14 @@ export function SenderBuilder({
               : goNext}
           disabled={publishState === "publishing"}
         >
-          {currentStep === "publish"
-            ? publishState === "publishing" ? "正在发布…" : "发布惊喜"
-            : currentStep === "memory" && memoryScreen === "scrapbook"
-              ? "完成心意"
-              : "继续"}
+          <PrimaryActionDecoration />
+          <span className={styles.primaryButtonLabel}>
+            {currentStep === "publish"
+              ? publishState === "publishing" ? "正在发布…" : "发布惊喜"
+              : currentStep === "memory" && memoryScreen === "scrapbook"
+                ? "完成心意"
+                : "继续"}
+          </span>
         </button>
       </footer>
 
@@ -1733,7 +1735,8 @@ export function SenderBuilder({
               <div>
                 <button type="button" onClick={() => setPendingTemplateId(null)}>保留当前版式</button>
                 <button type="button" className={styles.primaryButton} onClick={() => applyScrapbookTemplate(pendingTemplateId)}>
-                  确认切换
+                  <PrimaryActionDecoration />
+                  <span className={styles.primaryButtonLabel}>确认切换</span>
                 </button>
               </div>
             </div>
@@ -1793,7 +1796,8 @@ export function SenderBuilder({
               disabled={Boolean(cropError)}
               onClick={confirmCrop}
             >
-              完成调整
+              <PrimaryActionDecoration />
+              <span className={styles.primaryButtonLabel}>完成调整</span>
             </button>
           </div>
         </BottomSheet>

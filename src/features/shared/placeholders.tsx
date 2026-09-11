@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { PrimaryActionDecoration } from "@/components/primary-action-decoration/primary-action-decoration";
+import styles from "./placeholders.module.css";
 
 export function StageCard({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -9,15 +11,19 @@ export function StageCard({ label, children }: { label: string; children: ReactN
   );
 }
 
-export function PrimaryButton({ children, onClick, disabled = false }: { children: ReactNode; onClick: () => void; disabled?: boolean }) {
+type PrimaryButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
+  children: ReactNode;
+};
+
+export function PrimaryButton({ children, className = "", ...props }: PrimaryButtonProps) {
   return (
     <button
       type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="mt-6 flex min-h-[52px] w-full items-center justify-center whitespace-nowrap rounded-[var(--radius-round)] border-0 bg-[var(--coral-action)] px-5 font-bold text-[var(--on-dark)] shadow-[var(--shadow-pressed)] transition-[transform,box-shadow,background-color] active:translate-y-px active:shadow-none disabled:cursor-not-allowed disabled:bg-[#d7ccc3] disabled:text-[var(--ink)]"
+      {...props}
+      className={`${styles.primaryButton} ${className}`}
     >
-      {children}
+      <PrimaryActionDecoration />
+      <span className={styles.label}>{children}</span>
     </button>
   );
 }

@@ -1,0 +1,158 @@
+.root {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  color: #ffd0c5;
+  pointer-events: none;
+}
+
+.root::before {
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  content: "";
+  background:
+    radial-gradient(circle at 14% 28%, rgb(255 247 223 / 26%) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 68% 72%, rgb(97 53 35 / 9%) 0 0.8px, transparent 1.1px),
+    radial-gradient(circle at 44% 18%, rgb(255 247 223 / 17%) 0 0.7px, transparent 1px);
+  background-size: 14px 13px, 17px 16px, 11px 15px;
+  mix-blend-mode: soft-light;
+  opacity: 0.68;
+}
+
+.icon,
+.sparkle {
+  position: absolute;
+  display: block;
+}
+
+.icon {
+  fill: currentColor;
+  opacity: 0.22;
+}
+
+.giftLarge {
+  top: 13%;
+  left: 7%;
+  width: 20px;
+  height: 20px;
+  transform: rotate(-11deg);
+}
+
+.giftSmall {
+  right: 23%;
+  bottom: 9%;
+  width: 11px;
+  height: 11px;
+  opacity: 0.16;
+  transform: rotate(13deg);
+}
+
+.cakeLarge {
+  top: 9%;
+  right: 31%;
+  width: 18px;
+  height: 18px;
+  transform: rotate(7deg);
+}
+
+.cakeSmall {
+  top: 38%;
+  left: 4.5%;
+  width: 9px;
+  height: 9px;
+  opacity: 0.15;
+  transform: rotate(16deg);
+}
+
+.heartLarge {
+  right: 7%;
+  bottom: 17%;
+  width: 22px;
+  height: 22px;
+  opacity: 0.16;
+  transform: rotate(8deg);
+}
+
+.heartSmall {
+  left: 17%;
+  bottom: 8%;
+  width: 13px;
+  height: 13px;
+  transform: rotate(-12deg);
+}
+
+.sparkle {
+  color: #ffd06a;
+  filter: drop-shadow(0 0 3px rgb(255 211 102 / 36%));
+  transform-origin: center;
+}
+
+.sparkleSmall {
+  top: 43%;
+  right: 20%;
+  width: 12px;
+  height: 12px;
+  animation: sparkle-small 4.4s ease-in-out 720ms infinite;
+}
+
+.sparkleLarge {
+  top: 23%;
+  right: 12%;
+  width: 27px;
+  height: 27px;
+  animation: sparkle-large 4.4s ease-in-out 480ms infinite;
+}
+
+button:disabled > .root {
+  opacity: 0.28;
+}
+
+@keyframes sparkle-small {
+  0%,
+  66%,
+  100% {
+    opacity: 0.74;
+    transform: scale(1) rotate(0deg);
+  }
+
+  73% {
+    opacity: 1;
+    transform: scale(1.18) rotate(10deg);
+  }
+
+  81% {
+    opacity: 0.82;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes sparkle-large {
+  0%,
+  61%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1) rotate(0deg);
+  }
+
+  69% {
+    opacity: 1;
+    transform: scale(1.13) rotate(-7deg);
+  }
+
+  80% {
+    opacity: 0.86;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sparkleSmall,
+  .sparkleLarge {
+    animation: none;
+    opacity: 0.92;
+    transform: none;
+  }
+}

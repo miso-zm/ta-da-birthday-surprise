@@ -36,11 +36,10 @@
 
 .welcomeButton {
   position: absolute;
-  top: 76.9%;
-  left: 19.45%;
-  width: 61%;
-  aspect-ratio: 520 / 154;
-  min-height: 44px;
+  top: 76.5%;
+  left: 18%;
+  width: 64%;
+  height: clamp(72px, 21vw, 82px);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -61,70 +60,6 @@
   object-fit: fill;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-.welcomeButton::after {
-  position: absolute;
-  z-index: 1;
-  top: -20%;
-  bottom: -20%;
-  left: -55%;
-  width: 42%;
-  content: "";
-  pointer-events: none;
-  background: linear-gradient(
-    110deg,
-    transparent 22%,
-    rgb(255 244 211 / 8%) 38%,
-    rgb(255 244 211 / 34%) 50%,
-    rgb(255 244 211 / 8%) 62%,
-    transparent 78%
-  );
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: translateX(0) skewX(-12deg);
-  animation: welcome-button-shine 4.8s ease-in-out 1.15s infinite;
-}
-
-.welcomeStarField {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  pointer-events: none;
-}
-
-.welcomeStarSmall,
-.welcomeStarLarge {
-  position: absolute;
-  display: block;
-  aspect-ratio: 1;
-  background: #ffd06a;
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    100% 50%,
-    61% 65%,
-    50% 100%,
-    39% 65%,
-    0% 50%,
-    39% 35%
-  );
-  filter: drop-shadow(0 0 3px rgb(255 211 102 / 42%));
-  transform-origin: center;
-}
-
-.welcomeStarSmall {
-  top: 42%;
-  right: 22.5%;
-  width: 4.3%;
-  animation: welcome-star-glint-small 4.8s ease-in-out 1.34s infinite;
-}
-
-.welcomeStarLarge {
-  top: 25%;
-  right: 14.2%;
-  width: 10%;
-  animation: welcome-star-glint-large 4.8s ease-in-out 1.15s infinite;
 }
 
 .welcomeButton:active {
@@ -150,52 +85,6 @@
 
   100% {
     opacity: 1;
-  }
-}
-
-@keyframes welcome-button-shine {
-  0%,
-  70% {
-    opacity: 0;
-    transform: translateX(0) skewX(-12deg);
-  }
-
-  78% {
-    opacity: 0.34;
-  }
-
-  92%,
-  100% {
-    opacity: 0;
-    transform: translateX(380%) skewX(-12deg);
-  }
-}
-
-@keyframes welcome-star-glint-large {
-  0%,
-  70%,
-  100% {
-    opacity: 0.72;
-    transform: scale(1);
-  }
-
-  80% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes welcome-star-glint-small {
-  0%,
-  73%,
-  100% {
-    opacity: 0.52;
-    transform: scale(1);
-  }
-
-  83% {
-    opacity: 0.94;
-    transform: scale(1.08);
   }
 }
 
@@ -1192,8 +1081,12 @@
 }
 
 .primaryButton {
+  position: relative;
   width: 100%;
-  min-height: 54px;
+  min-height: 60px;
+  padding: 0 20px;
+  overflow: hidden;
+  isolation: isolate;
   border: 0;
   border-radius: var(--radius-round);
   background: var(--coral-action);
@@ -1205,9 +1098,19 @@
   cursor: pointer;
 }
 
+.primaryButtonLabel {
+  position: relative;
+  z-index: 2;
+}
+
 .primaryButton:active {
   transform: translateY(1px);
   box-shadow: none;
+}
+
+.primaryButton:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .centeredScreen {
@@ -1889,18 +1792,6 @@
   .welcomeButtonArtwork {
     animation: none;
     filter: brightness(1.018) saturate(1.025) sepia(0.03);
-  }
-
-  .welcomeButton::after {
-    display: none;
-    animation: none;
-  }
-
-  .welcomeStarSmall,
-  .welcomeStarLarge {
-    opacity: 1;
-    animation: none;
-    transform: none;
   }
 
   .loadingBlock,

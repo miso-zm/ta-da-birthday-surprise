@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PrimaryButton } from "@/features/shared/placeholders";
 import type { PublishedSurpriseLinks } from "@/lib/surprise-contract";
 
 export function PublishedResult({
@@ -44,9 +45,9 @@ export function PublishedResult({
         <div className="mt-5 rounded-[var(--radius-sm)] bg-[var(--page)] p-4 text-sm font-semibold break-all">
           {result.shareUrl}
         </div>
-        <button type="button" onClick={shareLink} className="mt-5 min-h-12 w-full rounded-[var(--radius-round)] bg-[var(--coral-action)] px-5 font-bold text-[var(--on-dark)]">
+        <PrimaryButton onClick={shareLink}>
           分享这份惊喜
-        </button>
+        </PrimaryButton>
         <button type="button" onClick={copyLink} className="mt-3 min-h-12 w-full rounded-[var(--radius-round)] border border-[var(--ui-line)] bg-[var(--paper)] px-5 font-bold text-[var(--ink)]">
           复制分享链接
         </button>

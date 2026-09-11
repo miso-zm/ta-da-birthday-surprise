@@ -1,0 +1,50 @@
+.primaryButton {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.5rem;
+  padding: 0 4.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  cursor: pointer;
+  border: 0;
+  border-radius: var(--radius-round);
+  background: var(--coral-action);
+  color: var(--on-dark);
+  box-shadow: var(--shadow-pressed);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  transition: opacity 160ms ease, transform 120ms ease-out, box-shadow 160ms ease;
+}
+
+.label {
+  position: relative;
+  z-index: 2;
+}
+
+.primaryButton:active {
+  opacity: 0.92;
+  transform: scale(0.99);
+  box-shadow: none;
+}
+
+.primaryButton:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  background: #d7ccc3;
+  color: var(--ink);
+  opacity: 0.62;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryButton {
+    transition: none;
+  }
+}

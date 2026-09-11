@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { PrimaryActionDecoration } from "@/components/primary-action-decoration/primary-action-decoration";
 import type { OpeningContent, Person } from "@/lib/surprise-contract";
 import styles from "./opening.module.css";
 
@@ -49,10 +50,7 @@ export function Opening({ recipient, sender, opening, onOpen }: OpeningProps) {
             sizes="276px"
             className={styles.buttonArtwork}
           />
-          <span className={styles.starField} aria-hidden="true">
-            <span className={styles.starSmall} />
-            <span className={styles.starLarge} />
-          </span>
+          <PrimaryActionDecoration />
         </button>
       </div>
     </section>

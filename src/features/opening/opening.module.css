@@ -40,11 +40,10 @@
 
 .openButton {
   position: absolute;
-  top: 75.27%;
-  left: 17.94%;
-  width: 64.24%;
-  aspect-ratio: 548 / 150;
-  min-height: 44px;
+  top: 75%;
+  left: 17.5%;
+  width: 65%;
+  height: clamp(72px, 21vw, 82px);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -53,7 +52,7 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  animation: button-arrive 720ms cubic-bezier(0.2, 0.9, 0.25, 1.12) 500ms both;
+  animation: button-arrive 460ms ease-out 360ms both;
   transition: transform 110ms ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -61,71 +60,8 @@
 .buttonArtwork {
   z-index: 0;
   object-fit: fill;
-  animation: paper-warmth 3.4s ease-in-out infinite alternate;
   user-select: none;
   -webkit-user-drag: none;
-}
-
-.openButton::after {
-  position: absolute;
-  z-index: 1;
-  top: -65%;
-  bottom: -65%;
-  left: -72%;
-  width: 72%;
-  content: "";
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    rgb(255 226 153 / 42%) 0%,
-    rgb(255 218 135 / 14%) 46%,
-    transparent 72%
-  );
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: rotate(-7deg);
-  animation: paper-light-pass 4.2s linear infinite;
-}
-
-.starField {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  pointer-events: none;
-}
-
-.starSmall,
-.starLarge {
-  position: absolute;
-  display: block;
-  aspect-ratio: 1;
-  background: #ffd06a;
-  clip-path: polygon(
-    50% 0%,
-    61% 35%,
-    100% 50%,
-    61% 65%,
-    50% 100%,
-    39% 65%,
-    0% 50%,
-    39% 35%
-  );
-  filter: drop-shadow(0 0 3px rgb(255 211 102 / 42%));
-  transform-origin: center;
-}
-
-.starSmall {
-  top: 48%;
-  right: 22.5%;
-  width: 4.3%;
-  animation: star-breathe-small 2.6s ease-in-out 420ms infinite;
-}
-
-.starLarge {
-  top: 31%;
-  right: 14.2%;
-  width: 10%;
-  animation: star-breathe-large 3s ease-in-out infinite;
 }
 
 .openButton:active {
@@ -140,92 +76,10 @@
 @keyframes button-arrive {
   0% {
     opacity: 0;
-    transform: translateY(14px) scale(0.96);
-  }
-
-  68% {
-    opacity: 1;
-    transform: translateY(-2px) scale(1.012);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes paper-warmth {
-  0% {
-    filter: brightness(0.975) saturate(0.97) sepia(0.01);
-  }
-
-  28% {
-    filter: brightness(1.035) saturate(1.045) sepia(0.045);
-  }
-
-  52% {
-    filter: brightness(1.002) saturate(1.01) sepia(0.02);
-  }
-
-  76% {
-    filter: brightness(1.045) saturate(1.055) sepia(0.055);
-  }
-
-  100% {
-    filter: brightness(1.012) saturate(1.025) sepia(0.032);
-  }
-}
-
-@keyframes paper-light-pass {
-  0%,
-  12% {
-    opacity: 0;
-    transform: translateX(0) rotate(-7deg);
-  }
-
-  38% {
-    opacity: 0.34;
-  }
-
-  66% {
-    opacity: 0.2;
-  }
-
-  88%,
-  100% {
-    opacity: 0;
-    transform: translateX(340%) rotate(-7deg);
-  }
-}
-
-@keyframes star-breathe-large {
-  0%,
-  100% {
-    opacity: 0.7;
-    transform: translateY(0) rotate(-2deg) scale(0.94);
-  }
-
-  48% {
-    opacity: 1;
-    transform: translateY(-1.5px) rotate(2deg) scale(1.08);
-  }
-
-  72% {
-    opacity: 0.86;
-    transform: translateY(-0.5px) rotate(0) scale(1.01);
-  }
-}
-
-@keyframes star-breathe-small {
-  0%,
-  100% {
-    opacity: 0.52;
-    transform: translateY(0) rotate(2deg) scale(0.9);
-  }
-
-  52% {
-    opacity: 0.94;
-    transform: translateY(-1px) rotate(-2deg) scale(1.06);
   }
 }
 
@@ -236,19 +90,6 @@
   }
 
   .buttonArtwork {
-    animation: none;
     filter: brightness(1.018) saturate(1.025) sepia(0.03);
-  }
-
-  .openButton::after {
-    display: none;
-    animation: none;
-  }
-
-  .starSmall,
-  .starLarge {
-    opacity: 1;
-    animation: none;
-    transform: none;
   }
 }
