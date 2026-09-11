@@ -1172,15 +1172,8 @@ export function SenderBuilder({
             onClick={startCreating}
             aria-label="开始准备生日惊喜"
           >
-            <NextImage
-              src="/assets/sender/sender-welcome-button-v2.png"
-              alt=""
-              fill
-              priority
-              sizes="270px"
-              className={styles.welcomeButtonArtwork}
-            />
             <PrimaryActionDecoration />
+            <span className={styles.welcomeButtonLabel}>开始准备</span>
           </button>
         </section>
       </main>

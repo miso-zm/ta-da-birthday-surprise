@@ -8,20 +8,6 @@
   pointer-events: none;
 }
 
-.root::before {
-  position: absolute;
-  inset: 2px;
-  border-radius: inherit;
-  content: "";
-  background:
-    radial-gradient(circle at 14% 28%, rgb(255 247 223 / 26%) 0 1px, transparent 1.25px),
-    radial-gradient(circle at 68% 72%, rgb(97 53 35 / 9%) 0 0.8px, transparent 1.1px),
-    radial-gradient(circle at 44% 18%, rgb(255 247 223 / 17%) 0 0.7px, transparent 1px);
-  background-size: 14px 13px, 17px 16px, 11px 15px;
-  mix-blend-mode: soft-light;
-  opacity: 0.68;
-}
-
 .icon,
 .sparkle {
   position: absolute;
@@ -34,10 +20,10 @@
 }
 
 .giftLarge {
-  top: 13%;
+  top: 10%;
   left: 7%;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   transform: rotate(-11deg);
 }
 
@@ -51,7 +37,7 @@
 }
 
 .cakeLarge {
-  top: 9%;
+  top: 7%;
   right: 31%;
   width: 18px;
   height: 18px;
@@ -70,8 +56,8 @@
 .heartLarge {
   right: 7%;
   bottom: 17%;
-  width: 22px;
-  height: 22px;
+  width: 19px;
+  height: 19px;
   opacity: 0.16;
   transform: rotate(8deg);
 }
@@ -99,10 +85,10 @@
 }
 
 .sparkleLarge {
-  top: 23%;
+  top: 18%;
   right: 12%;
-  width: 27px;
-  height: 27px;
+  width: 24px;
+  height: 24px;
   animation: sparkle-large 4.4s ease-in-out 480ms infinite;
 }
 

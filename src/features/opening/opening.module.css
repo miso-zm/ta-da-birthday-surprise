@@ -43,7 +43,7 @@
   top: 75%;
   left: 17.5%;
   width: 65%;
-  height: clamp(72px, 21vw, 82px);
+  height: clamp(60px, 17vw, 68px);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -51,21 +51,26 @@
   cursor: pointer;
   border: 0;
   border-radius: 999px;
-  background: transparent;
+  background: var(--coral-action);
+  box-shadow: 0 6px 14px rgb(161 84 66 / 16%);
+  color: var(--on-dark);
+  font: inherit;
+  font-size: clamp(20px, 6vw, 25px);
+  font-weight: var(--font-weight-bold);
   animation: button-arrive 460ms ease-out 360ms both;
   transition: transform 110ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-.buttonArtwork {
-  z-index: 0;
-  object-fit: fill;
-  user-select: none;
-  -webkit-user-drag: none;
+.buttonLabel {
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.08em;
 }
 
 .openButton:active {
-  transform: translateY(3px) scale(0.985);
+  transform: translateY(2px) scale(0.99);
+  box-shadow: 0 2px 7px rgb(161 84 66 / 13%);
 }
 
 .openButton:focus-visible {
@@ -87,9 +92,5 @@
   .openButton {
     animation: none;
     transition: none;
-  }
-
-  .buttonArtwork {
-    filter: brightness(1.018) saturate(1.025) sepia(0.03);
   }
 }

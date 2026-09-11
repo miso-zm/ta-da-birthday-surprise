@@ -43,14 +43,8 @@ export function Opening({ recipient, sender, opening, onOpen }: OpeningProps) {
           className={styles.openButton}
           aria-label={`拆开看看：${sender.displayName} 送给 ${recipient.displayName} 的生日惊喜`}
         >
-          <Image
-            src="/assets/opening/receiver-opening-button-v2.png"
-            alt=""
-            fill
-            sizes="276px"
-            className={styles.buttonArtwork}
-          />
           <PrimaryActionDecoration />
+          <span className={styles.buttonLabel}>拆开看看</span>
         </button>
       </div>
     </section>

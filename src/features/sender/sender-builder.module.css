@@ -39,7 +39,7 @@
   top: 76.5%;
   left: 18%;
   width: 64%;
-  height: clamp(72px, 21vw, 82px);
+  height: clamp(60px, 17vw, 68px);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -47,7 +47,12 @@
   cursor: pointer;
   border: 0;
   border-radius: 999px;
-  background: transparent;
+  background: var(--coral-action);
+  box-shadow: 0 6px 14px rgb(161 84 66 / 16%);
+  color: var(--on-dark);
+  font: inherit;
+  font-size: clamp(20px, 6vw, 25px);
+  font-weight: var(--font-weight-bold);
   animation: welcome-button-reveal 460ms ease-out 360ms both;
   transition:
     opacity 160ms ease,
@@ -55,16 +60,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.welcomeButtonArtwork {
-  z-index: 0;
-  object-fit: fill;
-  user-select: none;
-  -webkit-user-drag: none;
+.welcomeButtonLabel {
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.08em;
 }
 
 .welcomeButton:active {
   opacity: 0.9;
   transform: scale(0.99);
+  box-shadow: 0 2px 7px rgb(161 84 66 / 13%);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1787,11 +1792,6 @@
   .welcomeButton {
     animation: none;
     transition: none;
-  }
-
-  .welcomeButtonArtwork {
-    animation: none;
-    filter: brightness(1.018) saturate(1.025) sepia(0.03);
   }
 
   .loadingBlock,
