@@ -1,4 +1,4 @@
-import { Cake, Gift, Heart, Sparkle } from "@phosphor-icons/react";
+import { Cake, Gift, Heart, StarFour } from "@phosphor-icons/react";
 import styles from "./primary-action-decoration.module.css";
 
 export function PrimaryActionDecoration() {
@@ -10,8 +10,8 @@ export function PrimaryActionDecoration() {
       <Cake weight="fill" className={`${styles.icon} ${styles.cakeSmall}`} />
       <Heart weight="fill" className={`${styles.icon} ${styles.heartLarge}`} />
       <Heart weight="fill" className={`${styles.icon} ${styles.heartSmall}`} />
-      <Sparkle weight="fill" className={`${styles.sparkle} ${styles.sparkleSmall}`} />
-      <Sparkle weight="fill" className={`${styles.sparkle} ${styles.sparkleLarge}`} />
+      <StarFour weight="fill" className={`${styles.sparkle} ${styles.sparkleSmall}`} />
+      <StarFour weight="fill" className={`${styles.sparkle} ${styles.sparkleLarge}`} />
     </span>
   );
 }

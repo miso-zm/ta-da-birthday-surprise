@@ -41,9 +41,9 @@
 .openButton {
   position: absolute;
   top: 75%;
-  left: 17.5%;
-  width: 65%;
-  height: clamp(60px, 17vw, 68px);
+  left: 19.5%;
+  width: 61%;
+  height: clamp(58px, 16vw, 64px);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -55,7 +55,7 @@
   box-shadow: 0 6px 14px rgb(161 84 66 / 16%);
   color: var(--on-dark);
   font: inherit;
-  font-size: clamp(20px, 6vw, 25px);
+  font-size: clamp(20px, 5.7vw, 24px);
   font-weight: var(--font-weight-bold);
   animation: button-arrive 460ms ease-out 360ms both;
   transition: transform 110ms ease;
