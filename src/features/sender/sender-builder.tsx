@@ -1172,7 +1172,7 @@ export function SenderBuilder({
             aria-label="开始准备生日惊喜"
           >
             <NextImage
-              src="/assets/sender/sender-welcome-button-v1.png"
+              src="/assets/sender/sender-welcome-button-v2.png"
               alt=""
               fill
               priority
