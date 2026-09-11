@@ -1,5 +1,4 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { PrimaryActionDecoration } from "@/components/primary-action-decoration/primary-action-decoration";
 import styles from "./placeholders.module.css";
 
 export function StageCard({ label, children }: { label: string; children: ReactNode }) {
@@ -22,7 +21,6 @@ export function PrimaryButton({ children, className = "", ...props }: PrimaryBut
       {...props}
       className={`${styles.primaryButton} ${className}`}
     >
-      <PrimaryActionDecoration />
       <span className={styles.label}>{children}</span>
     </button>
   );

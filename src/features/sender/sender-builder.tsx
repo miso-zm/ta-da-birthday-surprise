@@ -1203,7 +1203,6 @@ export function SenderBuilder({
             从第 {stepIndex(incomplete) + 1} 步继续
           </p>
           <button type="button" className={styles.primaryButton} onClick={resumeDraft}>
-            <PrimaryActionDecoration />
             <span className={styles.primaryButtonLabel}>继续编辑</span>
           </button>
           <button type="button" className={styles.textButton} onClick={startFresh}>
@@ -1709,7 +1708,6 @@ export function SenderBuilder({
               : goNext}
           disabled={publishState === "publishing"}
         >
-          <PrimaryActionDecoration />
           <span className={styles.primaryButtonLabel}>
             {currentStep === "publish"
               ? publishState === "publishing" ? "正在发布…" : "发布惊喜"
@@ -1735,7 +1733,6 @@ export function SenderBuilder({
               <div>
                 <button type="button" onClick={() => setPendingTemplateId(null)}>保留当前版式</button>
                 <button type="button" className={styles.primaryButton} onClick={() => applyScrapbookTemplate(pendingTemplateId)}>
-                  <PrimaryActionDecoration />
                   <span className={styles.primaryButtonLabel}>确认切换</span>
                 </button>
               </div>
@@ -1796,7 +1793,6 @@ export function SenderBuilder({
               disabled={Boolean(cropError)}
               onClick={confirmCrop}
             >
-              <PrimaryActionDecoration />
               <span className={styles.primaryButtonLabel}>完成调整</span>
             </button>
           </div>
