@@ -229,7 +229,13 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
         </div>
       ) : null}
 
-      <input ref={inputRef} className={styles.fileInput} type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} />
+      <input
+        ref={inputRef}
+        hidden
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={selectPhoto}
+      />
 
       {!value ? (
         <button type="button" className={styles.addPhoto} onClick={() => inputRef.current?.click()} disabled={Boolean(phase)}>
