@@ -45,6 +45,7 @@ import {
 import { TadaCompanion } from "../../components/tada-companion/tada-companion";
 import { PrimaryActionDecoration } from "../../components/primary-action-decoration/primary-action-decoration";
 import { PortraitEditor } from "./portrait-editor";
+import { countDiscardedScrapbookPhotos } from "./scrapbook-template-change";
 
 import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.webp";
 import oneBackground from "./assets/d044/one/background.webp";
@@ -800,6 +801,13 @@ export function SenderBuilder({
   const missingScrapbookSlots = draft.scrapbook.slots.filter(
     (slot) => !slot.imageUrl || brokenPhotoIds.has(slot.id),
   ).length;
+  const pendingTemplateLossCount = pendingTemplateId
+    ? countDiscardedScrapbookPhotos(
+        draft.scrapbook.slots,
+        SCRAPBOOK_TEMPLATE_SLOT_COUNTS[pendingTemplateId],
+        brokenPhotoIds,
+      )
+    : 0;
 
   function replaceDraft(updater: (previous: SenderDraft) => SenderDraft) {
     setDraft((previous) => ({
@@ -1744,12 +1752,21 @@ export function SenderBuilder({
               ))}
             </div>
             <div className={styles.templateConfirm}>
-              {pendingTemplateId && draft.scrapbook.slots.slice(SCRAPBOOK_TEMPLATE_SLOT_COUNTS[pendingTemplateId]).some((slot) => slot.imageUrl && !brokenPhotoIds.has(slot.id)) ? (
-                <p role="status">使用这个版式会移除后面的 {draft.scrapbook.slots.slice(SCRAPBOOK_TEMPLATE_SLOT_COUNTS[pendingTemplateId]).filter((slot) => slot.imageUrl && !brokenPhotoIds.has(slot.id)).length} 张照片；前面的照片会保留。</p>
-              ) : null}
-              <button type="button" className={styles.primaryButton} disabled={!pendingTemplateId} onClick={() => { if (pendingTemplateId) applyScrapbookTemplate(pendingTemplateId); }}>
-                <span className={styles.primaryButtonLabel}>使用这个版式</span>
-              </button>
+              {pendingTemplateLossCount > 0 ? (
+                <>
+                  <p role="alert">换成这个版式会移除后面的 {pendingTemplateLossCount} 张照片，前面的照片会保留。</p>
+                  <div>
+                    <button type="button" onClick={() => setPendingTemplateId(draft.scrapbook.templateId)}>保留当前版式</button>
+                    <button type="button" className={styles.primaryButton} onClick={() => { if (pendingTemplateId) applyScrapbookTemplate(pendingTemplateId); }}>
+                      <span className={styles.primaryButtonLabel}>移除 {pendingTemplateLossCount} 张并使用</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button type="button" className={styles.primaryButton} disabled={!pendingTemplateId} onClick={() => { if (pendingTemplateId) applyScrapbookTemplate(pendingTemplateId); }}>
+                  <span className={styles.primaryButtonLabel}>使用这个版式</span>
+                </button>
+              )}
             </div>
         </BottomSheet>
       ) : null}
