@@ -195,6 +195,8 @@ export type SenderDraft = {
   scrapbook: ScrapbookContent;
   gift: GiftContent;
   portrait?: SenderPortraitDraft;
+  /** True only after the sender explicitly finishes or skips the portrait page. */
+  portraitChoiceMade?: boolean;
 };
 
 export type SenderValidationErrors = Partial<

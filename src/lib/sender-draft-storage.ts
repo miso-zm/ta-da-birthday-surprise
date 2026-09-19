@@ -198,7 +198,8 @@ function hasSenderDraftShape(value: unknown): value is Record<string, unknown> {
     (value.gift.kind === "none" || value.gift.kind === "link") &&
     isString(value.gift.title) &&
     isString(value.gift.description) &&
-    isString(value.gift.externalUrl)
+    isString(value.gift.externalUrl) &&
+    (value.portraitChoiceMade === undefined || typeof value.portraitChoiceMade === "boolean")
     && (value.portrait === undefined || isPortraitDraft(value.portrait))
   );
 }

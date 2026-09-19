@@ -29,6 +29,7 @@ import {
 import {
   createDefaultSenderDraft,
   getFirstIncompleteSenderStep,
+  getSenderResumeLocation,
   senderDraftToPreview,
   validateSenderDraft,
 } from "../../lib/sender-preview";
@@ -732,7 +733,9 @@ export function SenderBuilder({
     let cancelled = false;
     if (initialDraft) {
       setDraft(initialDraft);
-      setCurrentStep(getFirstIncompleteSenderStep(initialDraft));
+      const location = getSenderResumeLocation(initialDraft);
+      setCurrentStep(location.step);
+      setMemoryScreen(location.memoryScreen ?? "choice");
       setScreen("edit");
       initialized.current = true;
       return () => { cancelled = true; };
@@ -808,8 +811,10 @@ export function SenderBuilder({
 
   function resumeDraft() {
     if (!recoverableDraft) return;
+    const location = getSenderResumeLocation(recoverableDraft);
     setDraft(recoverableDraft);
-    setCurrentStep(getFirstIncompleteSenderStep(recoverableDraft));
+    setCurrentStep(location.step);
+    setMemoryScreen(location.memoryScreen ?? "choice");
     setScreen("edit");
     setSaveState("saved");
     initialized.current = true;
@@ -880,6 +885,9 @@ export function SenderBuilder({
     if (currentStep === "memory" && memoryScreen !== "portrait") {
       setMemoryScreen("portrait");
       return;
+    }
+    if (currentStep === "memory" && memoryScreen === "portrait") {
+      replaceDraft((previous) => ({ ...previous, portraitChoiceMade: true }));
     }
     if (currentIndex < SENDER_STEPS.length - 1) {
       const nextStep = SENDER_STEPS[currentIndex + 1];
@@ -1602,6 +1610,7 @@ export function SenderBuilder({
               onBusyChange={setPortraitBusy}
               onChange={(portrait) => replaceDraft((previous) => ({
                 ...previous,
+                portraitChoiceMade: false,
                 ...(portrait ? { portrait } : { portrait: undefined }),
               }))}
             />

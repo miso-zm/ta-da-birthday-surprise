@@ -47,6 +47,7 @@ export function createDefaultSenderDraft(
       description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
       externalUrl: "https://example.com",
     },
+    portraitChoiceMade: false,
   };
 }
 
@@ -128,6 +129,23 @@ export function getFirstIncompleteSenderStep(
 ): SenderStep {
   const errors = validateSenderDraft(draft);
   return SENDER_STEPS.find((step) => errors[step]?.length) ?? "publish";
+}
+
+export type SenderResumeLocation =
+  | { step: SenderStep; memoryScreen?: undefined }
+  | { step: "memory"; memoryScreen: "portrait" };
+
+export function getSenderResumeLocation(
+  draft: SenderDraft,
+): SenderResumeLocation {
+  const firstIncompleteStep = getFirstIncompleteSenderStep(draft);
+  if (
+    draft.portraitChoiceMade !== true &&
+    (firstIncompleteStep === "gift" || firstIncompleteStep === "publish")
+  ) {
+    return { step: "memory", memoryScreen: "portrait" };
+  }
+  return { step: firstIncompleteStep };
 }
 
 function toUnlockConfig(draft: SenderDraft): UnlockConfig {
