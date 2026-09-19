@@ -9,6 +9,8 @@ import type {
 } from "@/lib/surprise-contract";
 import { ReceiverShell } from "../s/[slug]/receiver-shell";
 import { PublishedResult } from "./published-result";
+import { getBrowserDraftStorage } from "@/lib/sender-draft-storage";
+import { rememberPublishedWork } from "@/lib/published-work-storage";
 
 function createPublishOperationKey(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -21,6 +23,7 @@ function createPublishOperationKey(): string {
 export function SenderRouteShell() {
   const [preview, setPreview] = useState<SurprisePreview | null>(null);
   const [published, setPublished] = useState<PublishedSurpriseLinks | null>(null);
+  const [historySaved, setHistorySaved] = useState(true);
   const [resumeDraft, setResumeDraft] = useState<SenderDraft | undefined>();
   const latestDraft = useRef<SenderDraft | null>(null);
   const publishOperation = useRef<{ updatedAt: string; key: string } | null>(null);
@@ -29,10 +32,7 @@ export function SenderRouteShell() {
     return (
       <PublishedResult
         result={published}
-        onEdit={() => {
-          setResumeDraft(latestDraft.current ?? undefined);
-          setPublished(null);
-        }}
+        historySaved={historySaved}
       />
     );
   }
@@ -76,12 +76,24 @@ export function SenderRouteShell() {
         if (!response.ok) {
           if (response.status === 409) publishOperation.current = null;
           throw new Error(
-            response.status === 503
+            response.status >= 500
               ? "发布服务暂时不可用，草稿已保留，请稍后重试。"
+              : response.status === 413
+                ? "照片总大小过大，请压缩照片后重试。"
+              : response.status === 429
+                ? "发布次数较多，请稍等片刻再试。"
+              : response.status === 403
+                ? "发布请求未通过验证，请刷新页面后重试。"
+              : response.status === 409
+                ? "这次发布未能完成，请重新发布。"
               : "内容或礼物链接没有通过安全检查，请检查后重试。",
           );
         }
         const result = await response.json() as PublishedSurpriseLinks;
+        const storage = getBrowserDraftStorage();
+        setHistorySaved(Boolean(storage && rememberPublishedWork(storage, {
+          ...result, recipientName: draft.basics.recipientName, memoryKind: draft.memoryKind,
+        }, window.location.origin)));
         setPublished(result);
       }}
     />

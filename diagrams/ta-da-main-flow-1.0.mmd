@@ -1,0 +1,29 @@
+graph TD
+  subgraph Sender["Sender 创建流程"]
+    direction LR
+    S1["1 基础信息"] --> S2["2 惊喜玩法"]
+    S2 --> S3["3 心意内容二选一"]
+    S3 --> S4["4 礼物"]
+    S4 --> S5["5 预览与发布"]
+  end
+  S5 --> O["Receiver<br/>Opening"]
+
+  O --> G{"设置游戏？"}
+  G -- "是" --> U["Unlock Game<br/>找礼物 / 剪刀石头布 / 吹蜡烛"]
+  G -- "直接送达" --> M{"心意内容"}
+  U --> M
+  M -- "普通贺卡" --> C["Birthday Card"]
+  M -- "回忆手帐" --> B["3:4 Scrapbook"]
+  C --> R["Gift Reveal"]
+  B --> R
+  R --> H["Share"]
+
+  classDef sender fill:#FFF0E8,stroke:#FA907B,color:#5B4636,stroke-width:2px;
+  classDef receiver fill:#FFFFFF,stroke:#F3E9DA,color:#5B4636,stroke-width:2px;
+  classDef decision fill:#FFF4CF,stroke:#FFBE3D,color:#5B4636,stroke-width:2px;
+  classDef finish fill:#E7F7F2,stroke:#7ED9C8,color:#5B4636,stroke-width:2px;
+
+  class S1,S2,S3,S4,S5 sender;
+  class O,U,C,B receiver;
+  class G,M decision;
+  class R,H finish;

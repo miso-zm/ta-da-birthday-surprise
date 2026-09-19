@@ -104,30 +104,56 @@ export class PublicationService {
     };
   }
 
-  private async sanitizeScrapbook(
+  private async sanitizeContentMedia(
     content: SurpriseContent,
     publicationId: string,
   ): Promise<{
     content: StoredSurpriseContent;
     media: Array<{ record: MediaRecord; image: SanitizedImage }>;
   }> {
+    const media: Array<{ record: MediaRecord; image: SanitizedImage }> = [];
+    let memory: StoredSurpriseContent["memory"];
     if (content.memory.kind === "card") {
-      return {
-        content: { ...content, memory: { kind: "card", card: content.memory.card } },
-        media: [],
+      memory = { kind: "card", card: content.memory.card };
+    } else {
+      const sanitized = await Promise.all(
+        content.memory.scrapbook.slots.map((slot) => sanitizeImage(slot.imageUrl ?? "")),
+      );
+      const scrapbookMedia = sanitized.map((image, index) => {
+        const mediaId = deriveToken(this.config.mediaSigningSecret, `media:${publicationId}:scrapbook:${index}`);
+        return {
+          image,
+          record: {
+            schemaVersion: PUBLICATION_SCHEMA_VERSION,
+            id: mediaId,
+            publicationId,
+            filename: `${mediaId}.${image.extension}`,
+            mimeType: image.mimeType,
+            width: image.width,
+            height: image.height,
+          } satisfies MediaRecord,
+        };
+      });
+      media.push(...scrapbookMedia);
+      memory = {
+        kind: "scrapbook",
+        scrapbook: {
+          templateId: content.memory.scrapbook.templateId,
+          description: content.memory.scrapbook.description,
+          slots: content.memory.scrapbook.slots.map((slot, index) => ({
+            id: slot.id,
+            mediaId: scrapbookMedia[index].record.id,
+            transform: slot.transform,
+          })),
+        },
       };
     }
 
-    const sanitized: SanitizedImage[] = [];
-    for (const slot of content.memory.scrapbook.slots) {
-      sanitized.push(await sanitizeImage(slot.imageUrl ?? ""));
-    }
-    const media = sanitized.map((image, index) => {
-      const mediaId = deriveToken(
-        this.config.mediaSigningSecret,
-        `media:${publicationId}:${index}`,
-      );
-      return {
+    let portrait: StoredSurpriseContent["portrait"];
+    if (content.portrait) {
+      const image = await sanitizeImage(content.portrait.imageUrl);
+      const mediaId = deriveToken(this.config.mediaSigningSecret, `media:${publicationId}:portrait`);
+      media.push({
         image,
         record: {
           schemaVersion: PUBLICATION_SCHEMA_VERSION,
@@ -137,23 +163,19 @@ export class PublicationService {
           mimeType: image.mimeType,
           width: image.width,
           height: image.height,
-        } satisfies MediaRecord,
-      };
-    });
-    const scrapbook: StoredSurpriseContent["memory"] = {
-      kind: "scrapbook",
-      scrapbook: {
-        templateId: content.memory.scrapbook.templateId,
-        description: content.memory.scrapbook.description,
-        slots: content.memory.scrapbook.slots.map((slot, index) => ({
-          id: slot.id,
-          mediaId: media[index].record.id,
-          transform: slot.transform,
-        })),
-      },
-    };
+        },
+      });
+      portrait = { templateId: content.portrait.templateId, mediaId };
+    }
+
+    const { portrait: _sourcePortrait, ...contentWithoutPortrait } = content;
+    void _sourcePortrait;
     return {
-      content: { ...content, memory: scrapbook },
+      content: {
+        ...contentWithoutPortrait,
+        memory,
+        ...(portrait ? { portrait } : {}),
+      },
       media,
     };
   }
@@ -193,7 +215,7 @@ export class PublicationService {
       return { ...this.links(publicToken, publicationId, existing.expiresAt), managerToken };
     }
 
-    const prepared = await this.sanitizeScrapbook(validated.content, publicationId);
+    const prepared = await this.sanitizeContentMedia(validated.content, publicationId);
     return this.store.serialize(async () => {
       const raced = await this.readRecord(publicationId);
       if (raced) {
@@ -252,9 +274,10 @@ export class PublicationService {
     if (!record || !safeEqual(record.publicTokenHash, tokenHash)) return { status: "not-found" };
     if (activeStatus(record, this.clock()) === "closed") return { status: "closed" };
 
+    const { portrait: storedPortrait, ...storedWithoutPortrait } = record.content;
     let content: SurpriseContent;
     if (record.content.memory.kind === "card") {
-      content = record.content;
+      content = { ...storedWithoutPortrait, memory: record.content.memory };
     } else {
       const scrapbook: ScrapbookContent = {
         templateId: record.content.memory.scrapbook.templateId,
@@ -265,7 +288,16 @@ export class PublicationService {
           transform: slot.transform,
         })),
       };
-      content = { ...record.content, memory: { kind: "scrapbook", scrapbook } };
+      content = { ...storedWithoutPortrait, memory: { kind: "scrapbook", scrapbook } };
+    }
+    if (storedPortrait) {
+      content = {
+        ...content,
+        portrait: {
+          templateId: storedPortrait.templateId,
+          imageUrl: this.mediaUrl(storedPortrait.mediaId),
+        },
+      };
     }
     return {
       status: "active",

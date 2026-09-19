@@ -1,0 +1,75 @@
+.page { max-width: 430px; min-height: 100dvh; margin: 0 auto; padding: 20px; color: var(--color-ink-strong); }
+.header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 24px; font-size: 14px; color: var(--color-ink); }
+.header a { display: flex; align-items: center; min-height: 44px; }
+.collectionHeading { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.collectionHeading h1 { font-size: 30px; font-weight: 700; }
+.collectionHeading p { margin-top: 8px; font-size: 14px; line-height: 1.7; color: var(--color-ink); }
+.collectionHeading img { object-fit: contain; flex-shrink: 0; }
+.tabs { display: flex; gap: 8px; padding: 4px; border-radius: 20px; background: var(--color-line); margin-bottom: 20px; }
+.tabs button { flex: 1; min-height: 44px; border-radius: 20px; cursor: pointer; font-weight: 600; }
+.tabs button[aria-selected="true"] { background: var(--color-surface); color: var(--color-ink-strong); box-shadow: var(--shadow-card); }
+.workCard, .empty { border-radius: 20px; background: var(--color-surface); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow-card); }
+.workCard h2, .empty h2 { margin: 12px 0 8px; font-size: 20px; font-weight: 700; overflow-wrap: anywhere; }
+.workCard p, .empty p { font-size: 14px; line-height: 1.7; color: var(--color-ink); }
+.badge { display: inline-flex; padding: 4px 10px; border-radius: 12px; background: color-mix(in srgb, var(--color-mint) 18%, white); font-size: 12px; color: var(--color-ink); }
+.action { display: flex; min-height: 50px; align-items: center; justify-content: center; border-radius: 999px; background: var(--color-coral-action); color: var(--color-on-dark); font-weight: 700; margin-top: 22px; width: 100%; cursor: pointer; }
+.workActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.workActions a, .workActions button { display: flex; align-items: center; justify-content: center; padding: 0 14px; min-height: 44px; border: 1px solid var(--color-line); border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.note { font-size: 12px; line-height: 1.8; color: var(--color-ink); margin-top: 16px; }
+.note:empty { display: none; }
+.page a:focus-visible, .page button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 4px; }
+.page { padding: 16px 22px 32px; }
+.header { align-items: center; margin-bottom: 28px; font-size: 13px; }
+.header a { gap: 6px; }
+.header svg { flex-shrink: 0; }
+.createLink { padding: 0 14px; border: 1px solid var(--color-line); border-radius: 999px; background: var(--color-surface); }
+.collectionHeading { position: relative; justify-content: space-between; min-height: 146px; padding: 18px; margin-bottom: 22px; border-radius: 8px 28px 28px 28px; background: var(--color-on-dark); border: 1px solid var(--color-line); box-shadow: 0 5px 0 color-mix(in srgb, var(--color-line) 45%, transparent); }
+.collectionHeading::before { content: ""; position: absolute; width: 54px; height: 15px; top: -7px; left: 22px; transform: rotate(-5deg); background: color-mix(in srgb, var(--color-mint) 55%, transparent); }
+.headingCopy { position: relative; z-index: 1; min-width: 0; }
+.collectionHeading h1 { font-size: 30px; line-height: 1.3; }
+.collectionHeading p { margin-top: 8px; font-size: 13px; }
+.companion { position: relative; align-self: center; flex-shrink: 0; width: 116px; height: 100px; margin: 0 -6px 0 -8px; }
+.companion img { position: absolute; left: 0; top: 50%; transform: translateY(-50%) scale(1.22); transform-origin: center; }
+.tabs { border-radius: 0; padding: 0; background: transparent; border-bottom: 1px solid var(--color-line); gap: 24px; margin-bottom: 24px; }
+.tabs button { flex: 0 1 auto; padding: 0 10px 10px; border-radius: 0; font-size: 16px; position: relative; color: var(--color-ink); }
+.tabs button[aria-selected="true"] { background: transparent; box-shadow: none; color: var(--color-ink-strong); }
+.tabs button[aria-selected="true"]::after { content: ""; position: absolute; height: 3px; bottom: -1px; left: 6px; right: 6px; border-radius: 999px; background: var(--color-coral-action); }
+.workCard { position: relative; padding: 20px; border-radius: 20px; border: 1px solid var(--color-line); box-shadow: 0 6px 18px color-mix(in srgb, var(--color-line) 28%, transparent); }
+.workTop { display: flex; align-items: center; gap: 14px; }
+.workCopy { min-width: 0; flex: 1; }
+.workCard h2 { font-size: 18px; margin: 0 0 6px; line-height: 1.5; }
+.workCard p { font-size: 12px; }
+.cover { position: relative; width: 65px; aspect-ratio: 1; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; background: color-mix(in srgb, var(--color-line) 55%, var(--color-on-dark)); color: var(--color-ink); }
+.cover svg { width: 46px; height: 55px; transform: rotate(-5deg); }
+.badge { position: absolute; right: -4px; bottom: -5px; font-size: 10px; line-height: 1.4; white-space: nowrap; padding: 3px 7px; border: 2px solid var(--color-surface); border-radius: 999px; }
+.workCard:not([data-status="active"]) .badge { background: var(--color-line); }
+.workCard[data-status="active"] .badge { background: color-mix(in srgb, var(--color-mint) 22%, white); }
+.workActions { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--color-line); }
+.workActions a:last-child { margin-left: auto; background: var(--color-on-dark); }
+.workActions a, .workActions button { font-size: 13px; padding: 0 12px; }
+.empty { text-align: center; border: 1px dashed var(--color-line); box-shadow: none; padding: 28px 22px; }
+.empty .cover { margin: 0 auto 18px; }
+.storageNote { margin-top: 24px; color: var(--color-ink); font-size: 12px; line-height: 1.8; }
+.storageNote { display: flex; align-items: center; min-height: 44px; padding: 0; text-align: left; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; cursor: pointer; }
+.storageNote svg { flex-shrink: 0; }
+.storageDialog { position: fixed; inset: 0; margin: auto; width: calc(100% - 40px); max-width: 354px; max-height: calc(100dvh - 40px); padding: 32px 24px 24px; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-on-dark); color: var(--color-ink-strong); box-shadow: var(--shadow-card); overflow-y: auto; }
+.storageDialog::backdrop { background: rgb(43 33 22 / 38%); }
+.storageDialog h2 { font-size: 22px; font-weight: 700; padding-right: 24px; margin-bottom: 16px; }
+.storageDialog p { font-size: 14px; line-height: 1.8; color: var(--color-ink); }
+.storageDialog p + p { margin-top: 12px; }
+.dialogClose { position: absolute; right: 8px; top: 8px; display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; color: var(--color-ink); }
+.storageNote summary { display: flex; align-items: center; gap: 6px; cursor: pointer; min-height: 44px; padding: 10px 0; list-style: none; }
+.storageNote summary::-webkit-details-marker { display: none; }
+.storageNote summary svg { flex-shrink: 0; }
+.storageNote[open] summary svg { transform: rotate(90deg); }
+.storageNote p { padding: 0 0 12px; }
+.collectionHeading, .workCard, .empty { border-radius: var(--radius-md); }
+@media (max-width: 374px) { .page { padding-inline: 18px; } .collectionHeading { padding-inline: 14px; } .collectionHeading h1 { font-size: 28px; } .companion img { width: 96px; height: 96px; } .workTop { gap: 10px; } .workCard { padding: 16px; } .cover { width: 58px; } }
+.result { max-width: 430px; min-height: 100dvh; margin: 0 auto; display: flex; align-items: center; padding: 24px 20px; }
+.resultCard { width: 100%; padding: 22px 24px 16px; border-radius: var(--radius-md); background: var(--color-on-dark); box-shadow: var(--shadow-card); text-align: center; }
+.hero { margin: 0 auto 10px; width: 140px; height: 140px; object-fit: contain; }
+.resultFooter { display: flex; justify-content: center; gap: 24px; margin-top: 16px; padding-top: 10px; color: var(--color-ink); font-size: 13px; }
+.resultFooter a { display: flex; align-items: center; min-height: 44px; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.resultCard h1 { font-size: clamp(25px, 7vw, 30px); font-weight: 700; line-height: 1.4; letter-spacing: -0.04em; }
+.resultCard .subtitle { margin-top: 10px; font-size: 14px; line-height: 1.7; color: var(--color-ink); }
+.resultCard :global(button) { cursor: pointer; }

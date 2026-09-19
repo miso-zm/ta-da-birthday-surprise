@@ -22,7 +22,6 @@ export function createDefaultSenderDraft(
     basics: {
       recipientName: "Mia",
       senderName: "Sunny",
-      birthday: "0828",
       openingTemplateId: "warm-letter",
       openingTitle: "Mia，生日快乐！",
       openingPrompt: "Sunny 留了一段想对你说的话，还有一份小礼物，等你亲手打开。",
@@ -79,9 +78,6 @@ export function validateSenderDraft(
   }
   if (senderName.length < 1 || senderName.length > 20) {
     add("basics", "请填写你的称呼（1–20 个字）。");
-  }
-  if (!isValidBirthday(draft.basics.birthday)) {
-    add("basics", "请选一个有效的生日月日。");
   }
 
   if (
@@ -182,12 +178,18 @@ export function senderDraftToPreview(
           })),
         },
       };
+  const portrait = draft.portrait?.posterImageUrl.startsWith("data:image/png;base64,")
+    ? {
+        templateId: draft.portrait.templateId,
+        imageUrl: draft.portrait.posterImageUrl,
+      }
+    : undefined;
   const preview: SurprisePreview = {
     mode: "preview",
     draftId: draft.draftId,
     recipient: { displayName: recipientName },
     sender: { displayName: senderName },
-    birthday: draft.basics.birthday,
+    ...(draft.basics.birthday ? { birthday: draft.basics.birthday } : {}),
     opening: {
       templateId: "warm-letter",
       title: `${recipientName}，生日快乐！`,
@@ -209,6 +211,7 @@ export function senderDraftToPreview(
       title: `${recipientName} 的生日惊喜`,
       text: `${senderName} 准备了一份生日惊喜，想和你分享。`,
     },
+    ...(portrait ? { portrait } : {}),
   };
 
   return { ok: true, preview };

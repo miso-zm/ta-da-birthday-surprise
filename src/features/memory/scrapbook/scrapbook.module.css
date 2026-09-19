@@ -39,7 +39,11 @@
 }
 
 .backgroundLayer { z-index: 1; }
-.maskedPhotoLayer { z-index: 2; }
+.maskedPhotoLayer {
+  z-index: 2;
+  /* Match the Sender: black hides the photo, white reveals it. */
+  mask-mode: luminance;
+}
 .framesLayer { z-index: 3; }
 .foregroundLayer { z-index: 4; }
 .outerLayer { z-index: 5; }

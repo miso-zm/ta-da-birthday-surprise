@@ -1,0 +1,47 @@
+graph TD
+    A["已完成<br/>Receiver 空壳主链路"]
+    B["现在：冻结完整产品闭环<br/>Sender 字段 → Surprise 数据 → Receiver"]
+    C{"门禁 0<br/>产品闭环与范围审核通过？"}
+
+    D["15 Sender 空壳与预览<br/>本地填写・预览・模拟发布"]
+    E["05 Ta-da! 品牌与 IP 契约<br/>只做设计，不阻塞产品闭环"]
+    F["三路模块方案并行<br/>20 Games｜30 Memory｜40 Gift/Share"]
+
+    G["00 总控整合<br/>冻结接口・状态・资产清单"]
+    H{"门禁 1<br/>静态方案审核通过？"}
+    I["三路 Worktree 并行实现<br/>先静态 → 再交互 → 再错误状态"]
+    J["本地完整闭环集成<br/>Sender 创建 → Receiver 打开"]
+    K["50 IP 静态资产<br/>替换已批准的占位内容"]
+    L["55 IP 动效<br/>Opening・解锁成功・Gift Reveal"]
+    M{"门禁 2<br/>Receiver 体验验收通过？"}
+    N["60 Supabase 与真实发布<br/>存储・图片・slug・读取"]
+    O["90 真机 QA 与 Vercel<br/>性能・错误・移动端・部署"]
+
+    A --> B --> C
+    C -- "需要调整" --> B
+    C -- "通过" --> D
+    C -- "通过，并行设计" --> E
+    C -- "通过，并行设计" --> F
+
+    D --> G
+    E --> G
+    F --> G
+    G --> H
+    H -- "需要调整" --> G
+    H -- "通过" --> I --> J --> K --> L --> M
+    M -- "需要调整" --> J
+    M -- "通过" --> N --> O
+
+    classDef done fill:#B7E1D2,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef now fill:#FFD77A,stroke:#7A5A3A,stroke-width:3px,color:#4A382F;
+    classDef plan fill:#FFF6EC,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef gate fill:#FFC6C1,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef build fill:#FFA36B,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef future fill:#FFFDF7,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+
+    class A done;
+    class B now;
+    class C,H,M gate;
+    class D,E,F,G plan;
+    class I,J,K,L build;
+    class N,O future;

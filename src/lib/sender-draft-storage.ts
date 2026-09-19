@@ -5,6 +5,7 @@ import {
   type SenderDraft,
   type SenderUnlockDraft,
   type ScrapbookTemplateId,
+  PORTRAIT_TEMPLATE_IDS,
 } from "./surprise-contract";
 
 export const SENDER_DRAFT_STORAGE_KEY = "ta-da:sender-draft:v1";
@@ -156,6 +157,17 @@ function isScrapbookSlot(value: unknown): boolean {
   );
 }
 
+function isPortraitDraft(value: unknown): boolean {
+  if (!isRecord(value) || !PORTRAIT_TEMPLATE_IDS.includes(value.templateId as never)) return false;
+  const isPortraitImage = (part: unknown) => isString(part) && (
+    part.startsWith("data:image/png;base64,") || part.startsWith("idb:portrait:")
+  );
+  if (!isPortraitImage(value.stickerImageUrl) || !isPortraitImage(value.posterImageUrl)) return false;
+  if (!isRecord(value.transform)) return false;
+  return [value.transform.centerX, value.transform.centerY, value.transform.width, value.transform.rotation]
+    .every((part) => typeof part === "number" && Number.isFinite(part));
+}
+
 function hasSenderDraftShape(value: unknown): value is Record<string, unknown> {
   if (!isRecord(value) || value.version !== 2) {
     return false;
@@ -171,7 +183,7 @@ function hasSenderDraftShape(value: unknown): value is Record<string, unknown> {
     isRecord(value.gift) &&
     isString(value.basics.recipientName) &&
     isString(value.basics.senderName) &&
-    isString(value.basics.birthday) &&
+    (value.basics.birthday === undefined || isString(value.basics.birthday)) &&
     isString(value.basics.openingTemplateId) &&
     isString(value.basics.openingTitle) &&
     isString(value.basics.openingPrompt) &&
@@ -187,6 +199,7 @@ function hasSenderDraftShape(value: unknown): value is Record<string, unknown> {
     isString(value.gift.title) &&
     isString(value.gift.description) &&
     isString(value.gift.externalUrl)
+    && (value.portrait === undefined || isPortraitDraft(value.portrait))
   );
 }
 
@@ -200,13 +213,11 @@ export function isSenderDraft(value: unknown): value is SenderDraft {
 export function loadSenderDraft(
   storage: ReadableStorage,
 ): SenderDraftLoadResult {
-  const serialized = storage.getItem(SENDER_DRAFT_STORAGE_KEY);
-
-  if (!serialized) {
-    return { status: "empty" };
-  }
-
   try {
+    const serialized = storage.getItem(SENDER_DRAFT_STORAGE_KEY);
+    if (!serialized) {
+      return { status: "empty" };
+    }
     const parsed: unknown = JSON.parse(serialized);
     const migrated = migrateLegacySenderDraft(parsed);
 
@@ -237,8 +248,13 @@ export function saveSenderDraft(
   }
 }
 
-export function clearSenderDraft(storage: WritableStorage): void {
-  storage.removeItem(SENDER_DRAFT_STORAGE_KEY);
+export function clearSenderDraft(storage: WritableStorage): boolean {
+  try {
+    storage.removeItem(SENDER_DRAFT_STORAGE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function getBrowserDraftStorage(): Storage | null {

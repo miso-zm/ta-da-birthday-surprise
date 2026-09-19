@@ -106,15 +106,39 @@ export type ShareContent = {
 
 export type ShareResult = "shared" | "copied" | "cancelled" | "failed";
 
+export const PORTRAIT_TEMPLATE_IDS = ["balloon", "blue"] as const;
+
+export type PortraitTemplateId = (typeof PORTRAIT_TEMPLATE_IDS)[number];
+
+export type PortraitTransform = {
+  centerX: number;
+  centerY: number;
+  width: number;
+  rotation: number;
+};
+
+export type PortraitPosterContent = {
+  templateId: PortraitTemplateId;
+  imageUrl: string;
+};
+
+export type SenderPortraitDraft = {
+  templateId: PortraitTemplateId;
+  stickerImageUrl: string;
+  posterImageUrl: string;
+  transform: PortraitTransform;
+};
+
 export type SurpriseContent = {
   recipient: Person;
   sender: Person;
-  birthday: string;
+  birthday?: string;
   opening: OpeningContent;
   unlock: UnlockConfig;
   memory: MemoryContent;
   gift: GiftContent;
   share: ShareContent;
+  portrait?: PortraitPosterContent;
 };
 
 export type Surprise = SurpriseContent & {
@@ -160,7 +184,7 @@ export type SenderDraft = {
   basics: {
     recipientName: string;
     senderName: string;
-    birthday: string;
+    birthday?: string;
     openingTemplateId: string;
     openingTitle: string;
     openingPrompt: string;
@@ -170,6 +194,7 @@ export type SenderDraft = {
   card: CardContent;
   scrapbook: ScrapbookContent;
   gift: GiftContent;
+  portrait?: SenderPortraitDraft;
 };
 
 export type SenderValidationErrors = Partial<

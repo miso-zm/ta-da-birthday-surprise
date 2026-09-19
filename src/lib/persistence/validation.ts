@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import {
   FIND_GIFT_TARGET_IDS,
+  PORTRAIT_TEMPLATE_IDS,
   SCRAPBOOK_DESCRIPTION_MAX_LENGTH,
   SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
   type SurpriseContent,
@@ -151,11 +152,27 @@ export function validatePublicationInput(input: unknown): ValidatedPublication {
   const memory = record(root.memory, "Memory");
   const gift = record(root.gift, "Gift");
   const share = record(root.share, "Share");
+  let portrait: SurpriseContent["portrait"];
+  let portraitImage: string | undefined;
+  if (root.portrait !== undefined) {
+    const rawPortrait = record(root.portrait, "Portrait poster");
+    if (typeof rawPortrait.templateId !== "string" || !PORTRAIT_TEMPLATE_IDS.includes(rawPortrait.templateId as never)) {
+      throw new PersistenceError("bad-request", "Portrait template is invalid.");
+    }
+    portraitImage = text(rawPortrait.imageUrl, "Portrait poster", 1, 17_000_000);
+    if (!portraitImage.startsWith("data:image/png;base64,")) {
+      throw new PersistenceError("bad-request", "Portrait poster must be a PNG image.");
+    }
+    portrait = {
+      templateId: rawPortrait.templateId as (typeof PORTRAIT_TEMPLATE_IDS)[number],
+      imageUrl: portraitImage,
+    };
+  }
 
   const recipientName = text(recipient.displayName, "Recipient name", 1, 20);
   const senderName = text(sender.displayName, "Sender name", 1, 20);
-  const birthday = text(root.birthday, "Birthday", 4, 4);
-  if (!validBirthday(birthday)) {
+  const birthday = root.birthday === undefined ? undefined : text(root.birthday, "Birthday", 4, 4);
+  if (birthday !== undefined && !validBirthday(birthday)) {
     throw new PersistenceError("bad-request", "Birthday is invalid.");
   }
 
@@ -258,7 +275,7 @@ export function validatePublicationInput(input: unknown): ValidatedPublication {
     content: {
       recipient: { displayName: recipientName },
       sender: { displayName: senderName },
-      birthday,
+      ...(birthday === undefined ? {} : { birthday }),
       opening: {
         templateId: text(opening.templateId, "Opening template", 1, 40),
         title: text(opening.title, "Opening title", 1, 80),
@@ -271,7 +288,9 @@ export function validatePublicationInput(input: unknown): ValidatedPublication {
         title: text(share.title, "Share title", 1, 80),
         text: text(share.text, "Share text", 1, 240),
       },
+      ...(portrait ? { portrait } : {}),
     },
     scrapbookImages,
+    ...(portraitImage ? { portraitImage } : {}),
   };
 }

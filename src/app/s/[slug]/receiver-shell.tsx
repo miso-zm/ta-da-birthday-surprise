@@ -13,44 +13,11 @@ import { BirthdayCard } from "@/features/memory/card/birthday-card";
 import { Scrapbook } from "@/features/memory/scrapbook/scrapbook";
 import { GiftReveal } from "@/features/gift/gift-reveal";
 import { Share } from "@/features/share/share";
-import { PrimaryButton } from "@/features/shared/placeholders";
 
 type ReceiverShellProps = {
   surprise: Surprise | SurprisePreview;
   onExitPreview?: () => void;
 };
-
-function PreviewComplete({
-  onExit,
-  onReplay,
-}: {
-  onExit?: () => void;
-  onReplay: () => void;
-}) {
-  return (
-    <section className="w-full px-1 py-2">
-      <div className="paper-surface paper-fold p-6 text-center">
-        <img
-          src="/assets/share/tada-share-complete-v1.png"
-          alt="Tada 抱着珊瑚色礼物，开心地送出惊喜"
-          className="mx-auto size-24 rounded-[1.5rem] object-cover shadow-[var(--shadow-card)]"
-        />
-        <h1 className="mt-5 text-2xl font-bold text-[var(--ink)]">
-          这份惊喜已经准备好了
-        </h1>
-      </div>
-
-      <PrimaryButton onClick={onExit ?? onReplay}>回去继续编辑</PrimaryButton>
-      <button
-        type="button"
-        onClick={onReplay}
-        className="mt-3 min-h-12 w-full rounded-[var(--radius-round)] border border-[var(--ui-line)] bg-[var(--paper)] px-4 text-sm font-bold text-[var(--ink)] active:translate-y-px"
-      >
-        再看一遍
-      </button>
-    </section>
-  );
-}
 
 export function ReceiverShell({ surprise, onExitPreview }: ReceiverShellProps) {
   const [step, setStep] = useState<ReceiverStep>("opening");
@@ -64,19 +31,12 @@ export function ReceiverShell({ surprise, onExitPreview }: ReceiverShellProps) {
       : ["opening", "unlock", "memory", "share"];
   const currentIndex = steps.indexOf(step);
   const isPreview = "mode" in surprise && surprise.mode === "preview";
-  const publishedShareUrl = "slug" in surprise
-    ? typeof window === "undefined"
-      ? `/s/${surprise.slug}`
-      : window.location.href
-    : "";
-
   const advance = (expected: ReceiverStep, next: ReceiverStep) => {
     setStep((current) => (current === expected ? next : current));
   };
 
   const handleUnlockComplete = () => advance("unlock", "memory");
   const handleUnlockFallback = () => advance("unlock", "memory");
-  const handleShareResult = () => undefined;
 
   return (
     <main className="relative isolate mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col bg-[var(--page)] px-4 pb-5 pt-4 sm:px-5">
@@ -133,20 +93,13 @@ export function ReceiverShell({ surprise, onExitPreview }: ReceiverShellProps) {
           />
         )}
         {step === "share" && (
-          isPreview ? (
-            <PreviewComplete
-              onExit={onExitPreview}
-              onReplay={() => setStep("opening")}
-            />
-          ) : (
-            <Share
-              url={publishedShareUrl}
-              title={surprise.share.title}
-              text={surprise.share.text}
-              onResult={handleShareResult}
-              onReplay={() => setStep("opening")}
-            />
-          )
+          <Share
+            recipientName={surprise.recipient.displayName}
+            gift={surprise.gift}
+            portrait={surprise.portrait}
+            onReplay={() => setStep("opening")}
+            onExitPreview={isPreview ? onExitPreview : undefined}
+          />
         )}
       </div>
     </main>

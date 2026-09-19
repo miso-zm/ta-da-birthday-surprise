@@ -1,0 +1,49 @@
+graph TD
+    A["已完成<br/>Receiver 空壳主链路"]
+    B["05 Ta-da! 品牌与 IP 系统<br/>角色・色板・语气・资产规范<br/>只做设计，不写代码"]
+    C{"门禁 1<br/>IP 契约审核通过？"}
+
+    D["20 Unlock Games<br/>三种游戏方案 + IP 状态"]
+    E["30 Card / Scrapbook<br/>模板结构 + IP 位置"]
+    F["40 Gift / Share<br/>Reveal 故事板 + 分享状态"]
+
+    G["00 总控整合<br/>冻结接口・资产清单・验收标准"]
+    H{"门禁 2<br/>静态方案审核通过？"}
+    I["三路 Worktree 并行实现<br/>先静态 → 再交互 → 再错误状态"]
+    J["Receiver 总控集成<br/>主分支保持可运行"]
+    K["50 IP 静态资产<br/>按批准清单替换占位图"]
+    L["55 IP 动效编排<br/>Opening・成功反馈・Gift Reveal"]
+    M{"门禁 3<br/>Receiver 集成验收通过？"}
+    N["60 Sender + Supabase<br/>创建流程・真实 slug・数据"]
+    O["90 移动端 QA + Vercel<br/>真机・性能・错误・部署"]
+
+    A --> B --> C
+    C -- "通过，开启三路设计" --> D
+    C -- "通过，开启三路设计" --> E
+    C -- "通过，开启三路设计" --> F
+    C -- "需要调整" --> B
+
+    D --> G
+    E --> G
+    F --> G
+    G --> H
+    H -- "通过" --> I
+    H -- "退回对应模块" --> G
+
+    I --> J --> K --> L --> M
+    M -- "通过" --> N --> O
+    M -- "需要调整" --> J
+
+    classDef done fill:#B7E1D2,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef design fill:#FFF6EC,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef parallel fill:#FFD77A,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef gate fill:#FFC6C1,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef build fill:#FFA36B,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef future fill:#FFFDF7,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+
+    class A done;
+    class B,G design;
+    class D,E,F parallel;
+    class C,H,M gate;
+    class I,J,K,L build;
+    class N,O future;

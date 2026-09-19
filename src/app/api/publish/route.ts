@@ -40,6 +40,13 @@ function errorResponse(error: unknown) {
 
 export async function POST(request: Request) {
   try {
+    const { config, service } = persistence();
+    if (request.headers.get("origin") !== config.appOrigin) {
+      throw new PersistenceError("forbidden", "发布请求来源不正确。");
+    }
+    if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
+      throw new PersistenceError("bad-request", "发布内容必须使用 JSON 格式。");
+    }
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_REQUEST_BYTES) {
       throw new PersistenceError("bad-request", "照片总大小过大，请压缩后重试。");
@@ -57,7 +64,6 @@ export async function POST(request: Request) {
       ?.split(";")
       .map((part) => part.trim().split("="))
       .find(([name]) => name === MANAGER_COOKIE_NAME)?.[1];
-    const { config, service } = persistence();
     const result = await service.publish(input.content, idempotencyKey, managerToken);
     const response = NextResponse.json(
       {

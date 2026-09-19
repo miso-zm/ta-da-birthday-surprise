@@ -89,7 +89,9 @@ Integration belongs to `00 总控与集成`. Before merging or copying work:
 3. check for overlapping files and existing user changes;
 4. integrate one result at a time;
 5. run proportional type, test, build, mobile, and accessibility checks;
-6. update `STATUS.md` only after the observable state is true.
+6. refresh the canonical preview from the integrated source snapshot;
+7. record the preview source and included modules;
+8. update `STATUS.md` only after the observable state is true.
 
 Do not deploy or connect Supabase unless the corresponding gate is explicitly approved.
 
@@ -107,7 +109,24 @@ Module tasks must stop and return a proposal if their result requires one of the
 
 ## Parallelism Rules
 
-Parallel work is allowed only when inputs are frozen, directories do not overlap, and each result can be reviewed independently. Limit simultaneous coding Worktrees to three.
+Use **parallel module lanes plus one serial integration queue**. Codex tasks are peers; task names express project roles and do not automatically synchronize files, commits, previews, or decisions.
+
+Parallel work is allowed only when inputs are frozen, directories do not overlap, and each result can be reviewed independently. Limit simultaneous coding Worktrees to three. Design discussions, static concepts, and read-only reviews may run in more tasks, but each must name its module and result. Only one active writer may own a module directory at a time.
+
+Track each module independently through these states:
+
+```text
+讨论中 → 方案已通过 → 实现中 → 模块已完成 → 总控已复核 → 已集成 → 统一预览已刷新 → 用户已验收
+```
+
+Never collapse these states. An approved design is not implemented code; a completed module is not integrated code; integrated code is not visible to the user until the canonical preview has been refreshed.
+
+Every preview must be labeled as either:
+
+- **Module preview:** owned by one task or Worktree and proves only that module result.
+- **Canonical preview:** published by `00 总控与集成`, identifies its source snapshot and lists the integrated modules it contains.
+
+When multiple historical controller tasks exist, `STATUS.md` names the single current controller. Other controller tasks are discussion sources until their conclusions are handed back and reconciled by the current controller.
 
 Keep these sequential:
 
@@ -130,9 +149,13 @@ Codex owns interface consistency, type safety, tests, build health, responsive b
 Every task returns this compact handoff:
 
 ```text
+任务名称与所属模块：
 实际完成：
+工作目录 / Worktree：
+分支与提交号：
 修改范围：
 演示或验证：
+预览类型与地址：模块预览 / 无
 未完成与风险：
 共享契约是否变化：否 / 提案待总控审核
 集成建议：
@@ -143,7 +166,7 @@ For user review, lead with the observable result and list only the decisions the
 
 ## Maintaining Project State
 
-`STATUS.md` is the only live dashboard. Keep it to roughly one page and update it when a decision is approved, work actually starts or ends, a blocker becomes real, or the next action changes.
+`STATUS.md` is the only live dashboard. Keep it to roughly one page and separate parallel module lanes, the serial integration queue, and preview provenance. Update it when a decision is approved, work actually starts or ends, a blocker becomes real, a preview changes, or the next action changes.
 
 `DECISIONS.md` is the durable approval log. Add an entry only for an explicit user decision, include the reason and affected contracts, and never convert a proposal into an approved decision implicitly.
 

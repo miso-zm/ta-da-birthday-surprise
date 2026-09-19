@@ -5,6 +5,7 @@ import type {
   Person,
   ScrapbookPhotoTransform,
   ShareContent,
+  PortraitTemplateId,
   Surprise,
   SurpriseContent,
   UnlockConfig,
@@ -21,7 +22,7 @@ export type StoredScrapbookSlot = {
 export type StoredSurpriseContent = {
   recipient: Person;
   sender: Person;
-  birthday: string;
+  birthday?: string;
   opening: OpeningContent;
   unlock: UnlockConfig;
   memory:
@@ -36,6 +37,10 @@ export type StoredSurpriseContent = {
       };
   gift: GiftContent;
   share: ShareContent;
+  portrait?: {
+    templateId: PortraitTemplateId;
+    mediaId: string;
+  };
 };
 
 export type PublicationStatus = "active" | "revoked" | "deleted";
@@ -84,4 +89,5 @@ export type ManagedPublication = {
 export type ValidatedPublication = {
   content: SurpriseContent;
   scrapbookImages: Array<{ slotId: string; dataUrl: string }>;
+  portraitImage?: string;
 };

@@ -151,6 +151,35 @@ test("sanitizes private scrapbook photos and enforces signed media expiry", asyn
   });
 });
 
+test("stores only the final portrait poster and returns a signed receiver image", async () => {
+  await withService(async ({ service, dataDir }) => {
+    const source = await sharp({
+      create: { width: 720, height: 720, channels: 4, background: { r: 168, g: 216, b: 255, alpha: 0.8 } },
+    }).withMetadata({ exif: { IFD0: { Artist: "must be removed" } } }).png().toBuffer();
+    const imageUrl = `data:image/png;base64,${source.toString("base64")}`;
+    const published = await service.publish(cardContent({
+      portrait: { templateId: "blue", imageUrl },
+    }), operationKey("portrait-poster"));
+    const token = new URL(published.shareUrl).pathname.split("/").pop();
+    const loaded = await service.load(token);
+    assert.equal(loaded.status, "active");
+    assert.equal(loaded.surprise.portrait.templateId, "blue");
+    assert.match(loaded.surprise.portrait.imageUrl, /\/api\/media\//);
+    const parsed = new URL(loaded.surprise.portrait.imageUrl);
+    const mediaId = parsed.pathname.split("/").pop();
+    const media = await service.media(mediaId, parsed.searchParams.get("expires"), parsed.searchParams.get("signature"));
+    const metadata = await sharp(media.bytes).metadata();
+    assert.equal(metadata.width, 720);
+    assert.equal(metadata.height, 720);
+    assert.equal(metadata.hasAlpha, true);
+    assert.equal(metadata.exif, undefined);
+    assert.equal((await readdir(path.join(dataDir, "blobs"))).length, 1);
+    const stored = await readFile(path.join(dataDir, "records", `${published.publicationId}.json`), "utf8");
+    assert.equal(stored.includes("data:image"), false);
+    assert.equal(stored.includes("stickerImageUrl"), false);
+  });
+});
+
 test("rejects invalid, credentialed, and private-network gift URLs", () => {
   assert.throws(() => validateGiftUrl("http://gift.example.com"));
   assert.throws(() => validateGiftUrl("https://user:pass@gift.example.com/redeem"));

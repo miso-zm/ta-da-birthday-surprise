@@ -1,0 +1,14 @@
+.dialog { position: fixed; inset: 0; margin: auto; width: calc(100% - 40px); max-width: 354px; max-height: calc(100dvh - 40px); padding: 0; border: 0; border-radius: var(--radius-lg); background: var(--on-dark); color: var(--ink); overflow-y: auto; box-shadow: var(--shadow-raised); }
+.dialog::backdrop { background: rgb(43 33 22 / 38%); }
+.paper { position: relative; padding: 23px 24px 24px; text-align: center; background-image: radial-gradient(rgb(154 135 116 / 9%) .5px, transparent .8px); background-size: 9px 11px; }
+.close { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); background: transparent; border: 0; cursor: pointer; }
+.hero { display: block; width: 116px; height: 116px; object-fit: contain; margin: 0 auto 12px; }
+.title { font-size: 23px; font-weight: 700; line-height: 1.5; letter-spacing: -.6px; margin: 0 0 14px; color: var(--color-ink-strong); }
+.copy { font-size: 14px; font-weight: 500; line-height: 1.85; color: var(--muted); margin: 0; }
+.actions { margin-top: 23px; display: grid; gap: 10px; }
+.primary, .secondary { min-height: 50px; width: 100%; padding: 10px 12px; border-radius: var(--radius-round); font-size: 16px; font-weight: 700; cursor: pointer; }
+.primary { background: var(--coral-action); color: var(--on-dark); border: 0; }
+.secondary { background: transparent; color: var(--color-ink); border: 1px solid var(--color-line); }
+.primary:disabled, .secondary:disabled, .close:disabled { opacity: .6; cursor: wait; }
+.primary:focus-visible, .secondary:focus-visible, .close:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.error { margin: 14px 0 0; font-size: 14px; line-height: 1.7; color: var(--ink); }

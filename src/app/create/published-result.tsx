@@ -1,24 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import styles from "./collection.module.css";
 import { PrimaryButton } from "@/features/shared/placeholders";
 import type { PublishedSurpriseLinks } from "@/lib/surprise-contract";
 
 export function PublishedResult({
   result,
-  onEdit,
+  historySaved = true,
 }: {
   result: PublishedSurpriseLinks;
-  onEdit: () => void;
+  historySaved?: boolean;
 }) {
   const [status, setStatus] = useState("");
+  const [showLink, setShowLink] = useState(false);
 
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(result.shareUrl);
-      setStatus("分享链接已复制");
+      setStatus("已复制");
     } catch {
-      setStatus("暂时无法复制，请长按下方链接复制。");
+      setShowLink(true);
+      setStatus("暂时无法复制，请长按链接复制。");
     }
   }
 
@@ -35,35 +39,30 @@ export function PublishedResult({
   }
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] items-center px-4 py-6 sm:px-5">
-      <section className="paper-surface paper-fold w-full p-6">
-        <p className="text-sm font-bold text-[var(--coral-dark)]">Ta-da!</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-[-0.04em]">惊喜已经准备好了</h1>
-        <p className="mt-3 text-sm font-semibold leading-6 text-[var(--muted)]">
-          把下面的专属链接发给 TA。拿到链接的人都可以查看，请只发给你信任的人。
+    <main className={styles.result}>
+      <section className={styles.resultCard}>
+        <Image src="/assets/gift/tada-gift-receipt-hero-v1.png" alt="Tada 从礼盒里开心地蹦出来" width={140} height={140} className={styles.hero} priority />
+        <h1 className="text-3xl font-bold tracking-[-0.04em]">心意已经准备好了</h1>
+        <p className={styles.subtitle}>
+          把这份生日快乐，送给 TA。
         </p>
-        <div className="mt-5 rounded-[var(--radius-sm)] bg-[var(--page)] p-4 text-sm font-semibold break-all">
+        {showLink ? <div className="mt-5 select-all rounded-[var(--radius-sm)] bg-[var(--page)] p-4 text-sm font-semibold break-all">
           {result.shareUrl}
-        </div>
+        </div> : null}
         <PrimaryButton onClick={shareLink}>
-          分享这份惊喜
+          分享给 TA
         </PrimaryButton>
-        <button type="button" onClick={copyLink} className="mt-3 min-h-12 w-full rounded-[var(--radius-round)] border border-[var(--ui-line)] bg-[var(--paper)] px-5 font-bold text-[var(--ink)]">
-          复制分享链接
+        <div className="mt-3 grid grid-cols-2 gap-3">
+        <button type="button" onClick={copyLink} className="min-h-12 rounded-[var(--radius-round)] border border-[var(--ui-line)] bg-transparent px-3 font-semibold text-[var(--ink)]">
+          复制链接
         </button>
-        <p aria-live="polite" className="min-h-8 pt-3 text-center text-sm font-bold text-[var(--muted)]">{status}</p>
-        <a href={result.shareUrl} target="_blank" rel="noreferrer noopener" className="flex min-h-11 items-center justify-center text-sm font-bold text-[var(--ink)] underline underline-offset-4">
-          在新窗口检查链接
+        <a href={result.shareUrl} target="_blank" rel="noreferrer noopener" className="flex min-h-12 items-center justify-center rounded-[var(--radius-round)] border border-[var(--ui-line)] px-3 font-semibold text-[var(--ink)]">
+          查看效果
         </a>
-        <a href={result.manageUrl} className="mt-2 flex min-h-11 items-center justify-center text-sm font-bold text-[var(--ink)] underline underline-offset-4">
-          管理或撤回这份惊喜
-        </a>
-        <button type="button" onClick={onEdit} className="mt-2 min-h-11 w-full text-sm font-bold text-[var(--muted)]">
-          继续修改草稿
-        </button>
-        <p className="mt-4 text-xs font-semibold leading-5 text-[var(--muted)]">
-          默认保留一年。修改后再发布会得到新链接，不会悄悄改变这一份。
-        </p>
+        </div>
+        {status ? <p role="status" className={styles.note}>{status}</p> : null}
+        {!historySaved ? <p role="status" className={styles.note}>浏览器暂时无法保存作品入口，请保留下方管理页地址。</p> : null}
+        <div className={styles.resultFooter}><a href={result.manageUrl}>管理这份心意</a><a href="/create/works">我的作品</a></div>
       </section>
     </main>
   );

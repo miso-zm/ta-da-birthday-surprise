@@ -18,7 +18,7 @@ The source family does not provide a Semibold file. To preserve the site's exist
 
 The internal font names and license metadata are preserved. Only the container format and glyph set were changed.
 
-The WOFF2 subsets were produced with fontTools 4.63.0 and Brotli 1.2.0. Their shipped sizes are 130,412 bytes (500), 130,964 bytes (600), and 134,424 bytes (700), for a total of 395,800 bytes.
+The WOFF2 subsets were produced with fontTools 4.63.0 and Brotli 1.2.0. On 2026-09-14 they were refreshed from the same installed source files, preserving the previous Unicode coverage and adding characters in the updated application source, including 管、理、品 in 管理作品. Their shipped sizes are 117,208 bytes (500), 117,572 bytes (600), and 120,456 bytes (700), for a total of 355,236 bytes. The font URLs carry a version query to invalidate previously cached subsets; the weight mapping and license are unchanged.
 
 ## Subset coverage
 

@@ -44,8 +44,12 @@ export default async function ManagePublicationPage({
         </p>
         {!inactive ? <ManageControls publicationId={publication.id} /> : null}
         <a href="/create" className="mt-3 flex min-h-11 items-center justify-center text-sm font-bold text-[var(--ink)] underline underline-offset-4">
-          回到创建页
+          继续修改草稿
         </a>
+        <p className="mt-4 text-xs leading-5 text-[var(--muted)]">
+          修改后发布会生成新链接，这份已发送的心意不会改变。
+        </p>
+        <a href="/create/works" className="mt-3 flex min-h-11 items-center justify-center text-sm font-semibold text-[var(--ink)]">返回我的作品</a>
       </section>
     </main>
   );

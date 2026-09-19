@@ -1,0 +1,42 @@
+graph TD
+    subgraph S["送礼人 Sender：创建惊喜"]
+        direction LR
+        S1["① 基本信息<br/>双方称呼・生日・开场"]
+        S2["② 选择一个解锁游戏<br/>找礼物 / 猜拳 / 密码"]
+        S3["③ Birthday Card<br/>模板・祝福・署名"]
+        S4["④ Scrapbook<br/>固定模板・照片・文字"]
+        S5["⑤ Gift<br/>标题・描述・HTTPS 链接"]
+        S6["⑥ 预览并发布"]
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    end
+
+    D["一份 Surprise 数据<br/>Sender 只负责填写<br/>Receiver 只负责展示"]
+    L["分享链接<br/>/s/[slug]"]
+
+    subgraph R["收礼人 Receiver：打开惊喜"]
+        direction LR
+        R1["Opening<br/>看见专属开场"]
+        R2["Unlock<br/>只玩被选中的一个游戏"]
+        R3["Birthday Card<br/>阅读祝福"]
+        R4["Scrapbook<br/>查看共同回忆"]
+        R5["Gift Reveal<br/>主动打开礼物"]
+        R6["Share<br/>分享或重新查看"]
+        R1 --> R2 --> R3 --> R4 --> R5 --> R6
+    end
+
+    S6 --> D --> L --> R1
+    S1 -. "生成 Opening" .-> R1
+    S2 -. "决定游戏配置" .-> R2
+    S3 -. "生成贺卡内容" .-> R3
+    S4 -. "生成回忆册内容" .-> R4
+    S5 -. "生成礼物内容" .-> R5
+
+    classDef sender fill:#FFD77A,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef contract fill:#FFC6C1,stroke:#7A5A3A,stroke-width:3px,color:#4A382F;
+    classDef receiver fill:#B7E1D2,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+    classDef link fill:#FFF6EC,stroke:#7A5A3A,stroke-width:2px,color:#4A382F;
+
+    class S1,S2,S3,S4,S5,S6 sender;
+    class D contract;
+    class L link;
+    class R1,R2,R3,R4,R5,R6 receiver;

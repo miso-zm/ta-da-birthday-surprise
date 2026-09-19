@@ -1,0 +1,23 @@
+.ending { width: 100%; padding: 24px 8px 40px; text-align: center; }
+.illustration { position: relative; width: min(100%, 280px); margin: 0 auto 28px; padding-top: 26px; }
+.portraitPoster { width: min(100%, 340px); margin: 0 auto 24px; }
+.portraitPosterImage { display: block; width: 100%; height: auto; }
+.tada { display: block; width: 100%; height: auto; transform: scale(1.35); }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti span { position: absolute; width: 6px; height: 12px; border-radius: var(--radius-round); background: var(--color-coral); transform: rotate(-30deg); }
+.confetti span:nth-child(1) { left: 20%; top: 6%; }
+.confetti span:nth-child(2) { left: 46%; top: 0; background: var(--color-sky); transform: rotate(30deg); }
+.confetti span:nth-child(3) { right: 18%; top: 7%; background: var(--color-mint); transform: rotate(-65deg); }
+.confetti span:nth-child(4) { left: 4%; top: 27%; background: var(--color-yellow); transform: rotate(-60deg); }
+.confetti span:nth-child(5) { right: 2%; top: 30%; background: var(--color-lilac); transform: rotate(25deg); }
+.confetti span:nth-child(6) { left: 1%; top: 57%; transform: rotate(45deg); }
+.confetti span:nth-child(7) { right: 1%; top: 64%; background: var(--color-mint); transform: rotate(-45deg); }
+.confetti span:nth-child(8) { left: 10%; top: 77%; background: var(--color-sky); transform: rotate(30deg); }
+.title { margin: 0; color: var(--color-ink-strong); font-size: clamp(28px, 7.7vw, 32px); font-weight: var(--font-weight-bold); line-height: 1.45; overflow-wrap: anywhere; }
+.message { margin: 16px 0 0; color: var(--color-ink); font-size: 16px; font-weight: var(--font-weight-regular); line-height: 1.75; }
+.actions { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 36px; }
+.giftLink { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; padding: 12px 24px; border-radius: var(--radius-round); background: var(--coral-action); color: var(--on-dark); font-size: 18px; font-weight: var(--font-weight-bold); text-decoration: none; }
+.textAction { min-height: 44px; padding: 8px 12px; border: 0; background: transparent; color: var(--color-ink); font-size: 16px; font-weight: var(--font-weight-medium); text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; cursor: pointer; }
+.giftLink:focus-visible, .textAction:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+.giftLink:active, .textAction:active { opacity: 0.85; }
+@media (max-height: 700px) { .ending { padding-block: 12px; } .illustration { width: 220px; margin-bottom: 20px; } .portraitPoster { width: min(100%, 280px); margin-bottom: 18px; } .actions { margin-top: 24px; } }

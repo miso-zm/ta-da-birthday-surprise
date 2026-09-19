@@ -28,10 +28,23 @@ test("publish and revoke routes keep receiver and manager credentials separate",
   try {
     const publishRoute = await import("../../app/api/publish/route.ts");
     const revokeRoute = await import("../../app/api/manage/[publicationId]/revoke/route.ts");
+    for (const origin of [undefined, "https://attacker.example"]) {
+      const rejected = await publishRoute.POST(new Request("http://127.0.0.1:3199/api/publish", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(origin ? { origin } : {}) },
+        body: "{}",
+      }));
+      assert.equal(rejected.status, 403);
+    }
+    const wrongFormat = await publishRoute.POST(new Request("http://127.0.0.1:3199/api/publish", {
+      method: "POST", headers: { origin: "http://127.0.0.1:3199", "content-type": "text/plain" }, body: "{}",
+    }));
+    assert.equal(wrongFormat.status, 400);
     const request = new Request("http://untrusted-host.example/api/publish", {
       method: "POST",
       headers: {
         "content-type": "application/json",
+        origin: "http://127.0.0.1:3199",
         "idempotency-key": createHash("sha256").update("route-operation").digest("base64url"),
       },
       body: JSON.stringify({ content: content() }),
@@ -50,6 +63,22 @@ test("publish and revoke routes keep receiver and manager credentials separate",
     assert.doesNotMatch(cookie, /Secure/i);
 
     const cookiePair = cookie.split(";")[0];
+    const listRoute = await import("../../app/api/manage/list/route.ts");
+    async function list(ids, cookieValue = cookiePair, originValue = "http://127.0.0.1:3199") {
+      return listRoute.POST(new Request("http://127.0.0.1:3199/api/manage/list", {
+        method: "POST", headers: { cookie: cookieValue, origin: originValue, "content-type": "application/json" }, body: JSON.stringify({ ids }),
+      }));
+    }
+    const listed = await list([body.publicationId, body.publicationId, "0".repeat(32)]);
+    assert.equal(listed.status, 200);
+    const listBody = await listed.json();
+    assert.equal(listBody.works.length, 1);
+    assert.equal(listBody.works[0].status, "active");
+    assert.equal(JSON.stringify(listBody).includes("managerToken"), false);
+    assert.deepEqual((await (await list([body.publicationId], "")).json()).works, []);
+    assert.equal((await list([body.publicationId], cookiePair, "https://attacker.example")).status, 403);
+    assert.equal((await list(["../records"])).status, 400);
+    assert.equal((await list(Array(101).fill(body.publicationId))).status, 400);
     const badOrigin = await revokeRoute.POST(
       new NextRequest(`http://127.0.0.1:3199/api/manage/${body.publicationId}/revoke`, {
         method: "POST",
@@ -68,6 +97,7 @@ test("publish and revoke routes keep receiver and manager credentials separate",
     );
     assert.equal(revoked.status, 200);
     assert.equal((await revoked.json()).status, "revoked");
+    assert.equal((await (await list([body.publicationId])).json()).works[0].status, "revoked");
   } finally {
     await rm(dataDir, { recursive: true, force: true });
   }

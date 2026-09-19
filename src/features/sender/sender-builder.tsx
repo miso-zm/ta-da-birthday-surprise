@@ -35,33 +35,36 @@ import {
 import {
   clearSenderDraft,
   getBrowserDraftStorage,
-  loadSenderDraft,
-  saveSenderDraft,
 } from "../../lib/sender-draft-storage";
+import {
+  clearSenderPortraitMedia,
+  loadSenderDraftWithMedia,
+  saveSenderDraftWithMedia,
+} from "../../lib/sender-portrait-media-storage";
 import { TadaCompanion } from "../../components/tada-companion/tada-companion";
 import { PrimaryActionDecoration } from "../../components/primary-action-decoration/primary-action-decoration";
+import { PortraitEditor } from "./portrait-editor";
 
-import { MobilePicker } from "./mobile-picker";
-import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.png";
-import oneBackground from "./assets/d044/one/background.png";
-import oneDescriptionPaper from "./assets/d044/one/description-torn-paper.png";
-import oneForeground from "./assets/d044/one/foreground-tape-clips-stickers.png";
-import oneOuterDoodles from "./assets/d044/one/outer-doodles-stars.png";
-import onePhotoFrames from "./assets/d044/one/photo-frames.png";
+import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.webp";
+import oneBackground from "./assets/d044/one/background.webp";
+import oneDescriptionPaper from "./assets/d044/one/description-torn-paper.webp";
+import oneForeground from "./assets/d044/one/foreground-tape-clips-stickers.webp";
+import oneOuterDoodles from "./assets/d044/one/outer-doodles-stars.webp";
+import onePhotoFrames from "./assets/d044/one/photo-frames.webp";
 import onePhotoMask from "./assets/d044/one/photo-slot-1-mask.png";
-import threeBackground from "./assets/d044/three/background.png";
-import threeDescriptionPaper from "./assets/d044/three/description-torn-paper.png";
-import threeForeground from "./assets/d044/three/foreground-tape-clips-stickers.png";
-import threeOuterDoodles from "./assets/d044/three/outer-doodles-stars.png";
-import threePhotoFrames from "./assets/d044/three/photo-frames.png";
+import threeBackground from "./assets/d044/three/background.webp";
+import threeDescriptionPaper from "./assets/d044/three/description-torn-paper.webp";
+import threeForeground from "./assets/d044/three/foreground-tape-clips-stickers.webp";
+import threeOuterDoodles from "./assets/d044/three/outer-doodles-stars.webp";
+import threePhotoFrames from "./assets/d044/three/photo-frames.webp";
 import threePhotoMaskOne from "./assets/d044/three/photo-slot-1-mask.png";
 import threePhotoMaskTwo from "./assets/d044/three/photo-slot-2-mask.png";
 import threePhotoMaskThree from "./assets/d044/three/photo-slot-3-mask.png";
-import twoBackground from "./assets/d044/two/background.png";
-import twoDescriptionPaper from "./assets/d044/two/description-torn-paper.png";
-import twoForeground from "./assets/d044/two/foreground-tape-clips-stickers.png";
-import twoOuterDoodles from "./assets/d044/two/outer-doodles-stars.png";
-import twoPhotoFrames from "./assets/d044/two/photo-frames.png";
+import twoBackground from "./assets/d044/two/background.webp";
+import twoDescriptionPaper from "./assets/d044/two/description-torn-paper.webp";
+import twoForeground from "./assets/d044/two/foreground-tape-clips-stickers.webp";
+import twoOuterDoodles from "./assets/d044/two/outer-doodles-stars.webp";
+import twoPhotoFrames from "./assets/d044/two/photo-frames.webp";
 import twoPhotoMaskOne from "./assets/d044/two/photo-slot-1-mask.png";
 import twoPhotoMaskTwo from "./assets/d044/two/photo-slot-2-mask.png";
 import styles from "./sender-builder.module.css";
@@ -69,7 +72,7 @@ import styles from "./sender-builder.module.css";
 const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
   basics: {
     title: "这份惊喜想送给谁？",
-    intro: "填好双方称呼和生日，Ta-da! 会把开场准备好。",
+    intro: "填好双方称呼，Ta-da! 会把开场准备好。",
   },
   unlock: {
     title: "想怎么打开这份惊喜？",
@@ -171,7 +174,7 @@ const GIFT_TARGETS: Array<{
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
 type SaveState = "idle" | "saving" | "saved" | "error";
-type MemoryScreen = "choice" | "scrapbook";
+type MemoryScreen = "choice" | "scrapbook" | "portrait";
 
 type CropDraft = {
   index: number;
@@ -188,14 +191,6 @@ export type SenderBuilderProps = {
 
 function stepIndex(step: SenderStep): number {
   return SENDER_STEPS.indexOf(step);
-}
-
-function formatBirthdayPart(value: number): string {
-  return String(value).padStart(2, "0");
-}
-
-function daysInMonth(month: number): number {
-  return new Date(2000, month, 0).getDate();
 }
 
 function formatSavedTime(value: string): string {
@@ -349,12 +344,10 @@ function ScrapbookTemplateChoice({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <label
       className={`${styles.templateChoice} ${selected ? styles.templateChoiceSelected : ""}`}
-      aria-pressed={selected}
-    onClick={onClick}
     >
+      <input className={styles.srOnly} type="radio" name="scrapbook-template" checked={selected} onChange={onClick} />
       <span className={styles.templateThumb} aria-hidden="true">
         <ScrapbookCanvas templateId={template.id} />
       </span>
@@ -367,7 +360,7 @@ function ScrapbookTemplateChoice({
           <svg viewBox="0 0 20 20" focusable="false"><path d="m4.5 10.2 3.4 3.4 7.6-8" /></svg>
         ) : null}
       </span>
-    </button>
+    </label>
   );
 }
 
@@ -552,8 +545,8 @@ function PhotoCropStage({
           style={photoTransformStyle(transform)}
           onError={onImageError}
         />
-        <span className={styles.cropHint}>拖动照片，让主体留在框内</span>
       </div>
+      <p className={styles.cropHint}>拖动照片，让主体留在框内</p>
       <label className={styles.cropZoomControl}>
         <span>缩放</span>
         <input
@@ -577,6 +570,7 @@ function ScrapbookCanvas({
   description = "",
   brokenPhotoIds = new Set<string>(),
   onOpenCrop,
+  onAddPhoto,
   onImageError,
 }: {
   templateId: ScrapbookTemplateId;
@@ -584,6 +578,7 @@ function ScrapbookCanvas({
   description?: string;
   brokenPhotoIds?: Set<string>;
   onOpenCrop?: (index: number) => void;
+  onAddPhoto?: (index: number) => void;
   onImageError?: (slotId: string) => void;
 }) {
   const template = SCRAPBOOK_TEMPLATES.find((item) => item.id === templateId)
@@ -637,21 +632,23 @@ function ScrapbookCanvas({
       {onOpenCrop ? geometry.map((slotGeometry, index) => {
         const slot = slots[index];
         const isOpenable = Boolean(slot?.imageUrl) && !brokenPhotoIds.has(slot.id);
-        if (!isOpenable) return null;
+        if (!isOpenable && !onAddPhoto) return null;
         return (
           <button
-            key={`${slot.id}-hotspot`}
+            key={`photo-${index}-hotspot`}
             type="button"
             className={styles.scrapbookPhotoHotspot}
-            aria-label={`调整第 ${index + 1} 张照片`}
+            aria-label={`${isOpenable ? "调整" : "添加"}第 ${index + 1} 张照片`}
             style={{
               left: `${slotGeometry.x}%`,
               top: `${slotGeometry.y}%`,
               width: `${slotGeometry.width}%`,
               height: `${slotGeometry.height}%`,
             }}
-            onClick={() => onOpenCrop(index)}
-          />
+            onClick={() => isOpenable ? onOpenCrop(index) : onAddPhoto?.(index)}
+          >
+            {!isOpenable ? <span className={styles.emptyPhotoAction}>添加照片</span> : null}
+          </button>
         );
       }) : null}
     </div>
@@ -662,11 +659,13 @@ function ScrapbookPreview({
   draft,
   brokenPhotoIds,
   onOpenCrop,
+  onAddPhoto,
   onImageError,
 }: {
   draft: SenderDraft["scrapbook"];
   brokenPhotoIds: Set<string>;
   onOpenCrop: (index: number) => void;
+  onAddPhoto: (index: number) => void;
   onImageError: (slotId: string) => void;
 }) {
   return (
@@ -680,6 +679,7 @@ function ScrapbookPreview({
         description={draft.description}
         brokenPhotoIds={brokenPhotoIds}
         onOpenCrop={onOpenCrop}
+        onAddPhoto={onAddPhoto}
         onImageError={onImageError}
       />
     </div>
@@ -703,6 +703,9 @@ export function SenderBuilder({
   const [saveError, setSaveError] = useState("");
   const [showErrors, setShowErrors] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  const [photoReading, setPhotoReading] = useState(false);
+  const [portraitBusy, setPortraitBusy] = useState(false);
+  const photoReadInFlight = useRef(false);
   const [photoSlotErrors, setPhotoSlotErrors] = useState<Record<string, string>>({});
   const [brokenPhotoIds, setBrokenPhotoIds] = useState<Set<string>>(() => new Set());
   const [memoryScreen, setMemoryScreen] = useState<MemoryScreen>("choice");
@@ -713,40 +716,47 @@ export function SenderBuilder({
   const [publishState, setPublishState] = useState<"idle" | "publishing" | "error">("idle");
   const [publishError, setPublishError] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveVersion = useRef(0);
   const scrollArea = useRef<HTMLDivElement | null>(null);
   const stepHeading = useRef<HTMLHeadingElement | null>(null);
   const onDraftChangeRef = useRef(onDraftChange);
   const initialized = useRef(false);
+  const addPhotoInput = useRef<HTMLInputElement | null>(null);
+  const slotPhotoInputs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     onDraftChangeRef.current = onDraftChange;
   }, [onDraftChange]);
 
   useEffect(() => {
+    let cancelled = false;
     if (initialDraft) {
       setDraft(initialDraft);
       setCurrentStep(getFirstIncompleteSenderStep(initialDraft));
       setScreen("edit");
       initialized.current = true;
-      return;
+      return () => { cancelled = true; };
     }
 
     const storage = getBrowserDraftStorage();
     if (!storage) {
       setLoadMessage("当前浏览器无法保存草稿，但你仍然可以继续完成预览。");
       setScreen("welcome");
-      return;
+      return () => { cancelled = true; };
     }
 
-    const result = loadSenderDraft(storage);
-    if (result.status === "ready") {
-      setRecoverableDraft(result.draft);
-      setScreen("recover");
-    } else {
-      if (result.status === "invalid") setLoadMessage(result.reason);
-      setDraft(createDefaultSenderDraft());
-      setScreen("welcome");
-    }
+    void loadSenderDraftWithMedia(storage).then((result) => {
+      if (cancelled) return;
+      if (result.status === "ready") {
+        setRecoverableDraft(result.draft);
+        setScreen(window.location.hash === "#draft" ? "recover" : "welcome");
+      } else {
+        if (result.status === "invalid") setLoadMessage(result.reason);
+        setDraft(createDefaultSenderDraft());
+        setScreen("welcome");
+      }
+    });
+    return () => { cancelled = true; };
   }, [initialDraft]);
 
   useEffect(() => {
@@ -756,6 +766,7 @@ export function SenderBuilder({
     setSaveError("");
     onDraftChangeRef.current?.(draft);
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    const version = ++saveVersion.current;
     saveTimer.current = setTimeout(() => {
       const storage = getBrowserDraftStorage();
       if (!storage) {
@@ -763,9 +774,11 @@ export function SenderBuilder({
         setSaveError("当前浏览器无法保存草稿，但不影响继续预览。");
         return;
       }
-      const result = saveSenderDraft(storage, draft);
-      setSaveState(result.ok ? "saved" : "error");
-      setSaveError(result.ok ? "" : result.reason);
+      void saveSenderDraftWithMedia(storage, draft).then((result) => {
+        if (version !== saveVersion.current) return;
+        setSaveState(result.ok ? "saved" : "error");
+        setSaveError(result.ok ? "" : result.reason);
+      });
     }, 250);
 
     return () => {
@@ -781,11 +794,6 @@ export function SenderBuilder({
   const validationErrors = useMemo(() => validateSenderDraft(draft), [draft]);
   const currentErrors = showErrors ? (validationErrors[currentStep] ?? []) : [];
   const currentIndex = stepIndex(currentStep);
-  const rawMonth = Number(draft.basics.birthday.slice(0, 2));
-  const month = rawMonth >= 1 && rawMonth <= 12 ? rawMonth : 0;
-  const rawDay = Number(draft.basics.birthday.slice(2));
-  const day =
-    month > 0 && rawDay >= 1 && rawDay <= daysInMonth(month) ? rawDay : 0;
   const missingScrapbookSlots = draft.scrapbook.slots.filter(
     (slot) => !slot.imageUrl || brokenPhotoIds.has(slot.id),
   ).length;
@@ -809,7 +817,11 @@ export function SenderBuilder({
 
   function startFresh() {
     const storage = getBrowserDraftStorage();
-    if (storage) clearSenderDraft(storage);
+    if (storage && !clearSenderDraft(storage)) {
+      setSaveError("浏览器暂时无法清除旧草稿，本次仍可继续创建。");
+    }
+    const oldDraftId = recoverableDraft?.draftId ?? draft.draftId;
+    void clearSenderPortraitMedia(oldDraftId);
     setDraft(createDefaultSenderDraft());
     setCurrentStep("basics");
     setRecoverableDraft(null);
@@ -819,6 +831,7 @@ export function SenderBuilder({
   }
 
   function startCreating() {
+    if (recoverableDraft) { setScreen("recover"); return; }
     setCurrentStep("basics");
     setScreen("edit");
     setSaveState("idle");
@@ -828,6 +841,10 @@ export function SenderBuilder({
   function goBack() {
     setShowErrors(false);
     setPhotoError("");
+    if (currentStep === "memory" && memoryScreen === "portrait") {
+      setMemoryScreen(draft.memoryKind === "scrapbook" ? "scrapbook" : "choice");
+      return;
+    }
     if (currentStep === "memory" && memoryScreen === "scrapbook") {
       setMemoryScreen("choice");
       setOpenSheet(null);
@@ -839,25 +856,31 @@ export function SenderBuilder({
       onDraftChangeRef.current?.(draft);
       const storage = getBrowserDraftStorage();
       if (storage) {
-        const result = saveSenderDraft(storage, draft);
-        setSaveState(result.ok ? "saved" : "error");
-        setSaveError(result.ok ? "" : result.reason);
+        void saveSenderDraftWithMedia(storage, draft).then((result) => {
+          setSaveState(result.ok ? "saved" : "error");
+          setSaveError(result.ok ? "" : result.reason);
+        });
       }
       setScreen("welcome");
       return;
     }
     const previousStep = SENDER_STEPS[currentIndex - 1];
     setCurrentStep(previousStep);
-    if (previousStep === "memory") setMemoryScreen("choice");
+    if (previousStep === "memory") setMemoryScreen("portrait");
   }
 
   function goNext() {
+    if (photoReadInFlight.current || portraitBusy) return;
     const errors = validationErrors[currentStep] ?? [];
     if (errors.length > 0) {
       setShowErrors(true);
       return;
     }
     setShowErrors(false);
+    if (currentStep === "memory" && memoryScreen !== "portrait") {
+      setMemoryScreen("portrait");
+      return;
+    }
     if (currentIndex < SENDER_STEPS.length - 1) {
       const nextStep = SENDER_STEPS[currentIndex + 1];
       setCurrentStep(nextStep);
@@ -865,7 +888,7 @@ export function SenderBuilder({
     }
   }
 
-  function openPreview() {
+  async function openPreview() {
     const result = senderDraftToPreview(draft);
     if (!result.ok) {
       setCurrentStep(result.firstIncompleteStep);
@@ -876,7 +899,7 @@ export function SenderBuilder({
     onDraftChangeRef.current?.(draft);
     const storage = getBrowserDraftStorage();
     if (storage) {
-      const saveResult = saveSenderDraft(storage, draft);
+      const saveResult = await saveSenderDraftWithMedia(storage, draft);
       setSaveState(saveResult.ok ? "saved" : "error");
       setSaveError(saveResult.ok ? "" : saveResult.reason);
     } else {
@@ -897,7 +920,7 @@ export function SenderBuilder({
     onDraftChangeRef.current?.(draft);
     const storage = getBrowserDraftStorage();
     if (storage) {
-      const saveResult = saveSenderDraft(storage, draft);
+      const saveResult = await saveSenderDraftWithMedia(storage, draft);
       setSaveState(saveResult.ok ? "saved" : "error");
       setSaveError(saveResult.ok ? "" : saveResult.reason);
     }
@@ -912,21 +935,11 @@ export function SenderBuilder({
     }
   }
 
-  function updateBirthday(nextMonth: number, nextDay: number) {
-    const safeDay = Math.min(nextDay, daysInMonth(nextMonth));
-    replaceDraft((previous) => ({
-      ...previous,
-      basics: {
-        ...previous.basics,
-        birthday: `${formatBirthdayPart(nextMonth)}${formatBirthdayPart(safeDay)}`,
-      },
-    }));
-  }
-
   async function addPhotos(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (files.length === 0) return;
+    if (photoReadInFlight.current) return;
     setPhotoError("");
 
     const targets = draft.scrapbook.slots
@@ -938,6 +951,8 @@ export function SenderBuilder({
     }
 
     const selectedFiles = files.slice(0, targets.length);
+    photoReadInFlight.current = true;
+    setPhotoReading(true);
     const results = await Promise.allSettled(selectedFiles.map(readImageFile));
     const successfulImages = new Map<number, string>();
     const nextErrors: Record<string, string> = {};
@@ -977,12 +992,17 @@ export function SenderBuilder({
       targets.slice(0, selectedFiles.length).forEach(({ slot }) => delete next[slot.id]);
       return { ...next, ...nextErrors };
     });
+    photoReadInFlight.current = false;
+    setPhotoReading(false);
   }
 
   async function replacePhoto(index: number, event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    if (photoReadInFlight.current) return;
+    photoReadInFlight.current = true;
+    setPhotoReading(true);
     setPhotoError("");
     try {
       const imageUrl = await readImageFile(file);
@@ -1011,10 +1031,14 @@ export function SenderBuilder({
         ...previous,
         [slotId]: error instanceof Error ? error.message : "照片暂时无法读取。",
       }));
+    } finally {
+      photoReadInFlight.current = false;
+      setPhotoReading(false);
     }
   }
 
   function applyScrapbookTemplate(templateId: ScrapbookTemplateId) {
+    if (photoReadInFlight.current) return;
     const slotCount = SCRAPBOOK_TEMPLATE_SLOT_COUNTS[templateId];
     replaceDraft((previous) => ({
       ...previous,
@@ -1039,18 +1063,6 @@ export function SenderBuilder({
     setOpenSheet(null);
     setPendingTemplateId(null);
     setPhotoError("");
-  }
-
-  function selectScrapbookTemplate(templateId: ScrapbookTemplateId) {
-    const nextSlotCount = SCRAPBOOK_TEMPLATE_SLOT_COUNTS[templateId];
-    const discardedPhotoCount = draft.scrapbook.slots
-      .slice(nextSlotCount)
-      .filter((slot) => slot.imageUrl && !brokenPhotoIds.has(slot.id)).length;
-    if (discardedPhotoCount > 0) {
-      setPendingTemplateId(templateId);
-      return;
-    }
-    applyScrapbookTemplate(templateId);
   }
 
   function chooseScrapbook() {
@@ -1125,9 +1137,7 @@ export function SenderBuilder({
 
   function completeScrapbook() {
     if (missingScrapbookSlots > 0) {
-      setPhotoError(`还差 ${missingScrapbookSlots} 张照片，请补齐后再完成心意。`);
-      setShowErrors(true);
-      scrollArea.current?.scrollTo({ top: 0, behavior: "smooth" });
+      addPhotoInput.current?.click();
       return;
     }
     goNext();
@@ -1175,6 +1185,7 @@ export function SenderBuilder({
             <PrimaryActionDecoration />
             <span className={styles.welcomeButtonLabel}>开始准备</span>
           </button>
+          <a href="/create/works" className={styles.worksEntry}>我的作品</a>
         </section>
       </main>
     );
@@ -1201,6 +1212,7 @@ export function SenderBuilder({
           <button type="button" className={styles.textButton} onClick={startFresh}>
             不用了，重新开始
           </button>
+          <a href="/create/works" className={styles.recoveryWorksEntry}>我的作品</a>
         </section>
       </main>
     );
@@ -1211,6 +1223,11 @@ export function SenderBuilder({
         title: "做一页回忆手帐",
         intro: "照片会自动填进固定版式；只有主体被切到时，才需要点照片调整。",
       }
+    : currentStep === "memory" && memoryScreen === "portrait"
+      ? {
+          title: `让 ${draft.basics.recipientName || "TA"} 成为生日主角`,
+          intro: "上传一张照片制作最后一页海报，也可以直接跳过。",
+        }
     : STEP_META[currentStep];
   const selectedScrapbookTemplate = SCRAPBOOK_TEMPLATES.find(
     (template) => template.id === draft.scrapbook.templateId,
@@ -1260,12 +1277,12 @@ export function SenderBuilder({
           </p>
         ) : null}
 
-        <ErrorPanel errors={currentErrors} />
+        {!(currentStep === "memory" && memoryScreen === "scrapbook") ? <ErrorPanel errors={currentErrors} /> : null}
 
         <section className={styles.formSection}>
           {currentStep === "basics" ? (
             <>
-              <div className={styles.twoColumns}>
+              <div className={styles.basicsFields}>
                 <Field label="收件人称呼">
                   <input
                     value={draft.basics.recipientName}
@@ -1315,32 +1332,6 @@ export function SenderBuilder({
                 </Field>
               </div>
 
-              <fieldset className={styles.fieldset}>
-                <legend>生日月日</legend>
-                <div className={styles.dateFields}>
-                  <MobilePicker
-                    label="月份"
-                    value={month || ""}
-                    options={Array.from({ length: 12 }, (_, index) => ({
-                      value: index + 1,
-                      label: `${index + 1} 月`,
-                    }))}
-                    onChange={(nextMonth) => updateBirthday(nextMonth, day || 1)}
-                  />
-                  <MobilePicker
-                    label="日期"
-                    value={day || ""}
-                    options={Array.from(
-                      { length: month ? daysInMonth(month) : 31 },
-                      (_, index) => ({ value: index + 1, label: `${index + 1} 日` }),
-                    )}
-                    columns={5}
-                    disabled={month === 0}
-                    disabledText="先选月份"
-                    onChange={(nextDay) => updateBirthday(month, nextDay)}
-                  />
-                </div>
-              </fieldset>
             </>
           ) : null}
 
@@ -1519,16 +1510,20 @@ export function SenderBuilder({
                   <h2 id="layout-summary-title">{selectedScrapbookTemplate.name}</h2>
                   <p>{selectedScrapbookTemplate.description}</p>
                 </div>
-                <button type="button" className={styles.summaryAction} onClick={() => setOpenSheet("template")}>
+                <button type="button" className={styles.summaryAction} disabled={photoReading} onClick={() => {
+                  setPendingTemplateId(draft.scrapbook.templateId);
+                  setOpenSheet("template");
+                }}>
                   更换版式
                 </button>
               </section>
 
-              <section className={styles.photoPickerSection} aria-labelledby="photo-picker-title">
+              {photoReading ? <p role="status">正在放入照片，请稍等…</p> : null}
+              <section className={styles.previewSection} aria-labelledby="scrapbook-preview-title">
                 <div className={styles.sectionHeading}>
                   <div>
-                    <span className={styles.sectionKicker}>照片</span>
-                    <h2 id="photo-picker-title">按选择顺序自动填槽</h2>
+                    <span className={styles.sectionKicker}>实时预览</span>
+                    <h2 id="scrapbook-preview-title">点照片调整，点空位添加</h2>
                   </div>
                   <span
                     className={missingScrapbookSlots > 0 ? styles.missingCount : styles.completeCount}
@@ -1538,14 +1533,10 @@ export function SenderBuilder({
                   </span>
                 </div>
 
-                {missingScrapbookSlots > 0 ? (
-                  <label className={styles.photoSelectButton}>
-                    {draft.scrapbook.slots.length === 1 ? "选择一张照片" : `选择照片（最多 ${missingScrapbookSlots} 张）`}
-                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple={draft.scrapbook.slots.length > 1} onChange={addPhotos} />
-                  </label>
-                ) : (
-                  <p className={styles.photoReadyHint}>需要更换时，点下方预览中的对应照片。</p>
-                )}
+                <input ref={addPhotoInput} className={styles.srOnly} tabIndex={-1} aria-hidden="true" type="file" accept="image/jpeg,image/png,image/webp" multiple={missingScrapbookSlots > 1} onChange={addPhotos} />
+                {draft.scrapbook.slots.map((slot, index) => (
+                  <input key={slot.id} ref={(node) => { slotPhotoInputs.current[index] = node; }} className={styles.srOnly} tabIndex={-1} aria-hidden="true" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => replacePhoto(index, event)} />
+                ))}
 
                 {photoError ? <p className={styles.photoError} role="alert">{photoError}</p> : null}
                 <div className={styles.slotStatusList}>
@@ -1565,19 +1556,11 @@ export function SenderBuilder({
                     );
                   })}
                 </div>
-              </section>
-
-              <section className={styles.previewSection} aria-labelledby="scrapbook-preview-title">
-                <div className={styles.sectionHeading}>
-                  <div>
-                    <span className={styles.sectionKicker}>实时预览</span>
-                    <h2 id="scrapbook-preview-title">点击照片可以调整画面</h2>
-                  </div>
-                </div>
                 <ScrapbookPreview
                   draft={draft.scrapbook}
                   brokenPhotoIds={brokenPhotoIds}
                   onOpenCrop={openCropEditor}
+                  onAddPhoto={(index) => slotPhotoInputs.current[index]?.click()}
                   onImageError={(slotId) => {
                     setBrokenPhotoIds((previous) => new Set(previous).add(slotId));
                     setPhotoSlotErrors((previous) => ({
@@ -1608,7 +1591,20 @@ export function SenderBuilder({
                   {draft.scrapbook.description.length}/{SCRAPBOOK_DESCRIPTION_MAX_LENGTH}，最多两行
                 </small>
               </label>
+              {currentErrors.length > 0 && missingScrapbookSlots === 0 ? <ErrorPanel errors={currentErrors} /> : null}
             </>
+          ) : null}
+
+          {currentStep === "memory" && memoryScreen === "portrait" ? (
+            <PortraitEditor
+              value={draft.portrait}
+              recipientName={draft.basics.recipientName}
+              onBusyChange={setPortraitBusy}
+              onChange={(portrait) => replaceDraft((previous) => ({
+                ...previous,
+                ...(portrait ? { portrait } : { portrait: undefined }),
+              }))}
+            />
           ) : null}
 
           {currentStep === "gift" ? (
@@ -1675,6 +1671,10 @@ export function SenderBuilder({
                     </dd>
                   </div>
                   <div>
+                    <dt>最后一页</dt>
+                    <dd>{draft.portrait ? "生日主角海报" : "Tada 庆祝插画"}</dd>
+                  </div>
+                  <div>
                     <dt>额外礼物</dt>
                     <dd>{draft.gift.kind === "link" ? "有，领取链接已准备好" : "没有，只送生日卡或手帐"}</dd>
                   </div>
@@ -1699,13 +1699,17 @@ export function SenderBuilder({
             : currentStep === "memory" && memoryScreen === "scrapbook"
               ? completeScrapbook
               : goNext}
-          disabled={publishState === "publishing"}
+          disabled={publishState === "publishing" || photoReading || portraitBusy}
         >
           <span className={styles.primaryButtonLabel}>
-            {currentStep === "publish"
+            {portraitBusy
+              ? "正在制作主角海报…"
+              : currentStep === "publish"
               ? publishState === "publishing" ? "正在发布…" : "发布惊喜"
               : currentStep === "memory" && memoryScreen === "scrapbook"
-                ? "完成心意"
+                ? missingScrapbookSlots > 0 ? `再选 ${missingScrapbookSlots} 张照片` : "完成手帐"
+                : currentStep === "memory" && memoryScreen === "portrait"
+                  ? draft.portrait ? "完成并继续" : "不上传，继续"
                 : "继续"}
           </span>
         </button>
@@ -1720,28 +1724,24 @@ export function SenderBuilder({
             setPendingTemplateId(null);
           }}
         >
-          {pendingTemplateId ? (
-            <div className={styles.templateConfirm}>
-              <p>换成更少照片的版式后，超出的照片会从这份手帐里移除。</p>
-              <div>
-                <button type="button" onClick={() => setPendingTemplateId(null)}>保留当前版式</button>
-                <button type="button" className={styles.primaryButton} onClick={() => applyScrapbookTemplate(pendingTemplateId)}>
-                  <span className={styles.primaryButtonLabel}>确认切换</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.templateSheetList}>
+            <div className={styles.templateSheetList} role="radiogroup" aria-label="回忆手帐版式">
               {SCRAPBOOK_TEMPLATES.map((template) => (
                 <ScrapbookTemplateChoice
                   key={template.id}
-                  selected={draft.scrapbook.templateId === template.id}
+                  selected={pendingTemplateId === template.id}
                   template={template}
-                  onClick={() => selectScrapbookTemplate(template.id)}
+                  onClick={() => setPendingTemplateId(template.id)}
                 />
               ))}
             </div>
-          )}
+            <div className={styles.templateConfirm}>
+              {pendingTemplateId && draft.scrapbook.slots.slice(SCRAPBOOK_TEMPLATE_SLOT_COUNTS[pendingTemplateId]).some((slot) => slot.imageUrl && !brokenPhotoIds.has(slot.id)) ? (
+                <p role="status">使用这个版式会移除后面的 {draft.scrapbook.slots.slice(SCRAPBOOK_TEMPLATE_SLOT_COUNTS[pendingTemplateId]).filter((slot) => slot.imageUrl && !brokenPhotoIds.has(slot.id)).length} 张照片；前面的照片会保留。</p>
+              ) : null}
+              <button type="button" className={styles.primaryButton} disabled={!pendingTemplateId} onClick={() => { if (pendingTemplateId) applyScrapbookTemplate(pendingTemplateId); }}>
+                <span className={styles.primaryButtonLabel}>使用这个版式</span>
+              </button>
+            </div>
         </BottomSheet>
       ) : null}
 
