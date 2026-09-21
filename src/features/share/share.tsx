@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { GiftContent, PortraitPosterContent } from "@/lib/surprise-contract";
-import { hasGiftLink } from "@/lib/surprise-contract";
+import { getPublicGiftLink } from "@/lib/gift-link-policy";
 import styles from "./share.module.css";
 
 type ShareProps = {
@@ -14,6 +14,7 @@ type ShareProps = {
 };
 
 export function Share({ recipientName, gift, portrait, onReplay, onExitPreview }: ShareProps) {
+  const giftLink = gift.kind === "link" ? getPublicGiftLink(gift.externalUrl) : null;
   return (
     <section className={styles.ending} aria-labelledby="birthday-ending-title">
       {portrait ? (
@@ -38,8 +39,10 @@ export function Share({ recipientName, gift, portrait, onReplay, onExitPreview }
       <h1 id="birthday-ending-title" className={styles.title}>生日快乐，{recipientName}！</h1>
       <p className={styles.message}>愿这份心意，<br />陪你开启开心的新一岁。</p>
       <div className={styles.actions}>
-        {hasGiftLink(gift) ? (
-          <a className={styles.giftLink} href={gift.externalUrl} target="_blank" rel="noopener noreferrer">查看礼物</a>
+        {giftLink ? (
+          <a className={styles.giftLink} href={giftLink.url} target="_blank" rel="noopener noreferrer">
+            {giftLink.kind === "gift" ? "打开送礼页" : "查看商品页"}
+          </a>
         ) : null}
         <button type="button" className={styles.textAction} onClick={onReplay}>再看一次</button>
         {onExitPreview ? <button type="button" className={styles.textAction} onClick={onExitPreview}>回去继续编辑</button> : null}

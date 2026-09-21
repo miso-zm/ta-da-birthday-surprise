@@ -71,7 +71,12 @@ export function SenderRouteShell() {
             "Content-Type": "application/json",
             "Idempotency-Key": publishOperation.current.key,
           },
-          body: JSON.stringify({ content: nextPreview }),
+          body: JSON.stringify({
+            content: nextPreview,
+            consent: {
+              termsAccepted: true,
+            },
+          }),
         });
         if (!response.ok) {
           if (response.status === 409) publishOperation.current = null;

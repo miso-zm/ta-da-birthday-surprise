@@ -3,7 +3,6 @@
 import { useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import type { GiftContent } from "@/lib/surprise-contract";
-import { isHttpsUrl } from "@/lib/surprise-contract";
 import { PrimaryButton } from "@/features/shared/placeholders";
 import {
   getGiftLinkPlatform,
@@ -110,16 +109,6 @@ function PlatformIcon({ platform }: { platform: GiftLinkPlatformId }) {
     );
   }
 
-  if (platform === "wechat-shop") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5.25 9.25h13.5v9.5H5.25z" />
-        <path d="m4.4 9.25 1.7-4h11.8l1.7 4M9 18.75v-5.1h6v5.1" />
-        <path d="M4.4 9.25c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2" />
-      </svg>
-    );
-  }
-
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="m9.35 14.65 5.3-5.3" />
@@ -140,8 +129,7 @@ function ArrowIcon() {
 export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
   const [revealed, setRevealed] = useState(false);
   const didRevealRef = useRef(false);
-  const validUrl = isHttpsUrl(gift.externalUrl);
-  const platform = validUrl ? getGiftLinkPlatform(gift.externalUrl) : null;
+  const platform = getGiftLinkPlatform(gift.externalUrl);
 
   const reveal = () => {
     if (didRevealRef.current) {
@@ -199,14 +187,14 @@ export function GiftReveal({ gift, onReveal, onContinue }: GiftRevealProps) {
           />
 
           <div className={styles.linkSection}>
-            <p className={styles.linkLabel}>礼物领取链接</p>
+            <p className={styles.linkLabel}>{platform?.kind === "gift" ? "官方送礼页" : "礼物商品页"}</p>
             {platform ? (
               <a
                 href={platform.url}
                 target="_blank"
                 rel="noreferrer noopener"
                 className={styles.platformCard}
-                aria-label={`打开${platform.name}礼物领取链接（新窗口）`}
+                aria-label={`打开${platform.name}${platform.kind === "gift" ? "送礼页" : "礼物商品页"}（新窗口）`}
               >
                 <span className={styles.platformIcon} data-platform={platform.id}>
                   <PlatformIcon platform={platform.id} />

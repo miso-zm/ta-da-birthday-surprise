@@ -35,3 +35,16 @@ export function rememberPublishedWork(storage: Pick<Storage, "getItem" | "setIte
     return false;
   }
 }
+
+export function forgetPublishedWork(
+  storage: Pick<Storage, "getItem" | "setItem">,
+  publicationId: string,
+  origin: string,
+): boolean {
+  try {
+    storage.setItem(KEY, JSON.stringify(readPublishedWorks(storage, origin).filter((item) => item.publicationId !== publicationId)));
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -1,4 +1,4 @@
-import { chmod, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
@@ -43,6 +43,23 @@ export class FileStore {
       await rename(temporary, target);
     } catch (error) {
       await unlink(temporary).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  async remove(relativePath: string): Promise<void> {
+    try {
+      await unlink(this.resolve(relativePath));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+
+  async list(relativeDirectory: string): Promise<string[]> {
+    try {
+      return await readdir(this.resolve(relativeDirectory));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
       throw error;
     }
   }

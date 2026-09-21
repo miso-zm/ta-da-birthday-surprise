@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "@phosphor-icons/react";
 import NextImage from "next/image";
 import {
   useEffect,
@@ -42,6 +43,7 @@ import {
   loadSenderDraftWithMedia,
   saveSenderDraftWithMedia,
 } from "../../lib/sender-portrait-media-storage";
+import { getPublicGiftLink } from "../../lib/gift-link-policy";
 import { TadaCompanion } from "../../components/tada-companion/tada-companion";
 import { PrimaryActionDecoration } from "../../components/primary-action-decoration/primary-action-decoration";
 import { PortraitEditor } from "./portrait-editor";
@@ -81,7 +83,7 @@ const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
     intro: "选一种轻松玩法；不想玩游戏，也可以直接送达。",
   },
   memory: {
-    title: "想送贺卡，还是做一本小手帐？",
+    title: "贺卡还是一页手帐？",
     intro: "选一种方式，把想说的话和回忆留下来。",
   },
   gift: {
@@ -89,8 +91,8 @@ const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
     intro: "没有也没关系，生日卡或手帐本身就是一份礼物。",
   },
   publish: {
-    title: "确认后发布这份惊喜",
-    intro: "可以先预览；发布后会生成一个专属查看链接。",
+    title: "确认并发布",
+    intro: "",
   },
 };
 
@@ -673,7 +675,7 @@ function ScrapbookPreview({
   return (
     <div
       className={styles.scrapbookPreview}
-      aria-label={`${draft.slots.length} 张照片的回忆手帐实时预览`}
+      aria-label={`${draft.slots.length} 张照片的一页手帐实时预览`}
     >
       <ScrapbookCanvas
         templateId={draft.templateId}
@@ -717,6 +719,7 @@ export function SenderBuilder({
   const [cropError, setCropError] = useState("");
   const [publishState, setPublishState] = useState<"idle" | "publishing" | "error">("idle");
   const [publishError, setPublishError] = useState("");
+  const [legalConsent, setLegalConsent] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveVersion = useRef(0);
   const scrollArea = useRef<HTMLDivElement | null>(null);
@@ -725,6 +728,8 @@ export function SenderBuilder({
   const initialized = useRef(false);
   const addPhotoInput = useRef<HTMLInputElement | null>(null);
   const slotPhotoInputs = useRef<Array<HTMLInputElement | null>>([]);
+  const legalConsentInput = useRef<HTMLInputElement | null>(null);
+  const legalConsentId = useId();
 
   useEffect(() => {
     onDraftChangeRef.current = onDraftChange;
@@ -930,6 +935,14 @@ export function SenderBuilder({
     if (!result.ok) {
       setCurrentStep(result.firstIncompleteStep);
       setShowErrors(true);
+      return;
+    }
+    if (!legalConsent) {
+      setPublishState("error");
+      setPublishError("请先阅读并完成确认，再发布。");
+      requestAnimationFrame(() => {
+        legalConsentInput.current?.focus();
+      });
       return;
     }
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -1277,8 +1290,12 @@ export function SenderBuilder({
 
       <div className={styles.scrollArea} ref={scrollArea}>
         <section className={styles.stepIntro}>
-          <h1 ref={stepHeading} tabIndex={-1}>{meta.title}</h1>
-          <p>{meta.intro}</p>
+          <h1
+            ref={stepHeading}
+            tabIndex={-1}
+            className={currentStep === "memory" && memoryScreen === "choice" ? styles.singleLineTitle : undefined}
+          >{meta.title}</h1>
+          {meta.intro ? <p>{meta.intro}</p> : null}
         </section>
 
         {loadMessage ? (
@@ -1462,8 +1479,8 @@ export function SenderBuilder({
                   />
                   <ChoiceCard
                     selected={draft.memoryKind === "scrapbook"}
-                    title="回忆手帐"
-                    description="用 1–3 张照片，留住几段回忆"
+                    title="一页手帐"
+                    description="用 1–3 张照片，留住一段回忆"
                     onClick={chooseScrapbook}
                   />
                 </div>
@@ -1548,6 +1565,7 @@ export function SenderBuilder({
                     {missingScrapbookSlots > 0 ? `还差 ${missingScrapbookSlots} 张` : "照片已放好"}
                   </span>
                 </div>
+                <p className={styles.privacyHint}>照片会保存在当前浏览器；发布时将上传用于手帐展示。</p>
 
                 <input ref={addPhotoInput} className={styles.srOnly} tabIndex={-1} aria-hidden="true" type="file" accept="image/jpeg,image/png,image/webp" multiple={missingScrapbookSlots > 1} onChange={addPhotos} />
                 {draft.scrapbook.slots.map((slot, index) => (
@@ -1640,8 +1658,8 @@ export function SenderBuilder({
                   />
                   <ChoiceCard
                     selected={draft.gift.kind === "link"}
-                    title="还有一份小礼物等 TA 收下"
-                    description="粘贴领取链接，TA 拆开礼盒后可以自己打开"
+                    title="还有一份小礼物"
+                    description="粘贴淘宝或京东送礼后复制的内容"
                     onClick={() => replaceDraft((previous) => ({
                       ...previous,
                       gift: { ...previous.gift, kind: "link" },
@@ -1652,21 +1670,26 @@ export function SenderBuilder({
 
               {draft.gift.kind === "link" ? (
                 <>
-                  <Field label="礼物领取链接" hint="仅填写官方 HTTPS 商品或领取链接">
-                    <input
-                      type="url"
+                  <Field label="礼物链接" hint="可直接粘贴平台复制的整段内容，Ta-da! 会自动提取链接">
+                    <textarea
+                      rows={3}
                       inputMode="url"
                       autoCapitalize="none"
                       autoCorrect="off"
+                      maxLength={4096}
                       value={draft.gift.externalUrl}
-                      placeholder="https://"
-                      onChange={(event) => replaceDraft((previous) => ({
-                        ...previous,
-                        gift: { ...previous.gift, externalUrl: event.target.value },
-                      }))}
+                      placeholder="粘贴淘宝或京东送礼内容"
+                      onChange={(event) => {
+                        const pastedValue = event.target.value;
+                        const extracted = getPublicGiftLink(pastedValue);
+                        replaceDraft((previous) => ({
+                          ...previous,
+                          gift: { ...previous.gift, externalUrl: extracted?.url ?? pastedValue },
+                        }));
+                      }}
                     />
                   </Field>
-                  <TadaMessage message="不要填写地址、订单号、付款信息或账号凭证。链接由 TA 拆开礼盒后自己打开。" />
+                  <TadaMessage message="淘宝提取码请另行发给 TA；送礼链接可能由最先打开的人领取。" />
                 </>
               ) : null}
             </>
@@ -1683,24 +1706,37 @@ export function SenderBuilder({
                     <dt>心意内容</dt>
                     <dd>
                       {draft.memoryKind === "card"
-                        ? `普通贺卡 · ${draft.card.message.length} 字祝福`
-                        : `回忆手帐 · ${draft.scrapbook.slots.filter((slot) => slot.imageUrl).length} 张照片`}
+                        ? "普通贺卡"
+                        : `一页手帐 · ${draft.scrapbook.slots.filter((slot) => slot.imageUrl).length} 张照片`}
                     </dd>
                   </div>
                   <div>
                     <dt>最后一页</dt>
-                    <dd>{draft.portrait ? "生日主角海报" : "Tada 庆祝插画"}</dd>
+                    <dd>{draft.portrait ? "生日主角海报" : "Tada 插画"}</dd>
                   </div>
                   <div>
                     <dt>额外礼物</dt>
-                    <dd>{draft.gift.kind === "link" ? "有，领取链接已准备好" : "没有，只送生日卡或手帐"}</dd>
+                    <dd>{draft.gift.kind === "link" ? "礼物链接" : "无"}</dd>
                   </div>
                 </dl>
               </section>
               <button type="button" className={styles.secondaryAction} onClick={openPreview}>
-                先预览完整流程
+                预览完整流程
               </button>
-              <TadaMessage message="发布后会生成一份不可变快照和新链接。草稿依然保留，之后修改会生成另一个链接。" />
+              <p className={styles.shareWarning}>
+                {draft.gift.kind === "link"
+                  ? "链接可转发；送礼链接可能先到先得。有效 1 年，可随时收回。"
+                  : "链接可转发，有效 1 年，可随时收回。"}
+              </p>
+              <div className={styles.consentGroup}>
+                <div className={styles.consentRow}>
+                  <span className={styles.consentControl}>
+                    <input ref={legalConsentInput} id={legalConsentId} type="checkbox" aria-label="同意用户协议和隐私政策" checked={legalConsent} onChange={(event) => { setLegalConsent(event.target.checked); setPublishError(""); }} />
+                    <span className={styles.consentBox} aria-hidden="true"><Check size={14} weight="bold" /></span>
+                  </span>
+                  <div><label htmlFor={legalConsentId}>我已阅读并同意</label><span> </span><a href="/terms" target="_blank" rel="noopener">《用户协议》</a><span>，并已阅读</span><a href="/privacy" target="_blank" rel="noopener">《隐私政策》</a><span>。</span></div>
+                </div>
+              </div>
               {publishError ? <p className={styles.publishError} role="alert">{publishError}</p> : null}
             </>
           ) : null}
@@ -1735,13 +1771,13 @@ export function SenderBuilder({
       {openSheet === "template" ? (
         <BottomSheet
           eyebrow="固定 3:4 版式"
-          title="选择回忆手帐版式"
+          title="选择手帐版式"
           onClose={() => {
             setOpenSheet(null);
             setPendingTemplateId(null);
           }}
         >
-            <div className={styles.templateSheetList} role="radiogroup" aria-label="回忆手帐版式">
+            <div className={styles.templateSheetList} role="radiogroup" aria-label="手帐版式">
               {SCRAPBOOK_TEMPLATES.map((template) => (
                 <ScrapbookTemplateChoice
                   key={template.id}

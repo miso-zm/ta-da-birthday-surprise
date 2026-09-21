@@ -41,7 +41,7 @@ export function PublishedResult({
   return (
     <main className={styles.result}>
       <section className={styles.resultCard}>
-        <Image src="/assets/gift/tada-gift-receipt-hero-v1.png" alt="Tada 从礼盒里开心地蹦出来" width={140} height={140} className={styles.hero} priority />
+        <Image src="/assets/gift/tada-gift-receipt-hero-v1.png" alt="Tada 从礼盒里开心地蹦出来" width={180} height={180} className={styles.hero} priority />
         <h1 className="text-3xl font-bold tracking-[-0.04em]">心意已经准备好了</h1>
         <p className={styles.subtitle}>
           把这份生日快乐，送给 TA。

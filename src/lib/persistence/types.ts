@@ -56,7 +56,24 @@ export type PublicationRecord = {
   expiresAt: string;
   revokedAt?: string;
   deletedAt?: string;
+  consent?: {
+    termsVersion: "2026-09-20" | "2026-09-21";
+    privacyVersion: "2026-09-20" | "2026-09-21";
+    acceptedAt: string;
+    photoRightsConfirmed: boolean;
+  };
   content: StoredSurpriseContent;
+};
+
+export type DeletedPublicationRecord = {
+  schemaVersion: typeof PUBLICATION_SCHEMA_VERSION;
+  id: string;
+  managerHash: string;
+  payloadHash: string;
+  status: "deleted";
+  createdAt: string;
+  expiresAt: string;
+  deletedAt: string;
 };
 
 export type PublicIndexRecord = {

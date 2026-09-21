@@ -6,6 +6,7 @@
 .addPhoto { min-height: 104px; display: grid; place-items: center; align-content: center; gap: 7px; padding: 16px; border: 1px dashed color-mix(in srgb, var(--coral) 55%, var(--ui-line)); border-radius: var(--radius-md); background: color-mix(in srgb, var(--coral) 5%, var(--paper)); color: var(--ink); font: inherit; cursor: pointer; }
 .addPhoto span { font-size: 16px; font-weight: var(--font-weight-bold); }
 .addPhoto small { max-width: 28em; color: var(--muted); font-size: 12px; font-weight: var(--font-weight-regular); line-height: 1.5; }
+.localPrivacy { margin: -4px 4px 0; color: var(--muted); font-size: 12px; font-weight: var(--font-weight-medium); line-height: 1.65; text-align: center; }
 .preview { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: var(--radius-md); background: var(--page); touch-action: none; cursor: grab; user-select: none; }
 .preview:active { cursor: grabbing; }
 .preview img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }

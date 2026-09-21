@@ -40,9 +40,13 @@ export default async function ManagePublicationPage({
         <p className="text-sm font-bold text-[var(--coral-dark)]">Ta-da! 管理入口</p>
         <h1 className="mt-3 text-3xl font-bold tracking-[-0.04em]">管理这份惊喜</h1>
         <p className="mt-3 text-sm font-semibold leading-6 text-[var(--muted)]">
-          {inactive ? "这份惊喜已经收起来了。" : `有效期至 ${new Date(publication.expiresAt).toLocaleDateString("zh-CN")}。`}
+          {publication.status === "deleted"
+            ? "这份惊喜已永久删除。"
+            : inactive
+              ? "这份惊喜已经收起来了。"
+              : `有效期至 ${new Date(publication.expiresAt).toLocaleDateString("zh-CN")}。`}
         </p>
-        {!inactive ? <ManageControls publicationId={publication.id} /> : null}
+        {publication.status !== "deleted" ? <ManageControls publicationId={publication.id} initialStatus={publication.status === "active" ? "active" : publication.status === "revoked" ? "revoked" : "expired"} /> : null}
         <a href="/create" className="mt-3 flex min-h-11 items-center justify-center text-sm font-bold text-[var(--ink)] underline underline-offset-4">
           继续修改草稿
         </a>

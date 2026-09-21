@@ -238,10 +238,13 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
       />
 
       {!value ? (
-        <button type="button" className={styles.addPhoto} onClick={() => inputRef.current?.click()} disabled={Boolean(phase)}>
-          <span>上传主角照片</span>
-          <small>建议使用单人正面或半身照</small>
-        </button>
+        <>
+          <button type="button" className={styles.addPhoto} onClick={() => inputRef.current?.click()} disabled={Boolean(phase)}>
+            <span>上传主角照片</span>
+            <small>建议使用单人正面或半身照</small>
+          </button>
+          <p className={styles.localPrivacy}>原照只在本机处理，发布时只保存生成后的海报。</p>
+        </>
       ) : (
         <>
           <div

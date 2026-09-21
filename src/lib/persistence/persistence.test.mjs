@@ -198,8 +198,54 @@ test("rejects invalid, credentialed, and private-network gift URLs", () => {
   ]) {
     assert.throws(() => validateGiftUrl(`https://[${address}]/redeem`), address);
   }
-  assert.equal(validateGiftUrl("https://[::ffff:8.8.8.8]/redeem"), "https://[::ffff:808:808]/redeem");
-  assert.equal(validateGiftUrl("https://gift.example.com/redeem?id=1"), "https://gift.example.com/redeem?id=1");
+  assert.throws(() => validateGiftUrl("https://[::ffff:8.8.8.8]/redeem"));
+  assert.throws(() => validateGiftUrl("https://gift.example.com/redeem?id=1"));
+  assert.throws(() => validateGiftUrl("https://m.tb.cn/h.example"));
+  assert.throws(() => validateGiftUrl("https://item.taobao.com.evil.example/item.htm?id=123456789"));
+  assert.throws(() => validateGiftUrl("https://item.taobao.com/item.htm?id=123456789"));
+  assert.throws(() => validateGiftUrl("https://item.jd.com/100012345678.html"));
+  assert.equal(validateGiftUrl("https://3.cn/-SafeGift123"), "https://3.cn/-SafeGift123");
+  assert.equal(
+    validateGiftUrl("【京东】https://3.cn/-SafeGift123 「送你一份礼物～」"),
+    "https://3.cn/-SafeGift123",
+  );
+});
+
+test("permanently deletes content and media and prevents idempotent resurrection", async () => {
+  await withService(async ({ service, dataDir }) => {
+    const source = await sharp({ create: { width: 80, height: 80, channels: 3, background: "#fa907b" } }).png().toBuffer();
+    const imageUrl = `data:image/png;base64,${source.toString("base64")}`;
+    const content = cardContent({
+      memory: { kind: "scrapbook", scrapbook: { templateId: "one-photo", description: "", slots: [{ id: "memory-1", imageUrl, transform: { x: 0, y: 0, scale: 1 } }] } },
+    });
+    const operation = operationKey("permanent-delete");
+    const published = await service.publish(content, operation);
+    const token = new URL(published.shareUrl).pathname.split("/").pop();
+    assert.equal((await service.load(token)).status, "active");
+    assert.equal((await readdir(path.join(dataDir, "blobs"))).length, 1);
+
+    const deleted = await service.deletePublication(published.publicationId, published.managerToken);
+    assert.equal(deleted.status, "deleted");
+    assert.equal((await service.load(token)).status, "not-found");
+    assert.equal((await readdir(path.join(dataDir, "blobs"))).length, 0);
+    assert.equal((await readdir(path.join(dataDir, "media"))).length, 0);
+    await assert.rejects(readFile(path.join(dataDir, "records", `${published.publicationId}.json`)));
+    assert.equal((await service.getManaged(published.publicationId, published.managerToken)).status, "deleted");
+    await assert.rejects(service.publish(content, operation, published.managerToken), (error) => error instanceof PersistenceError && error.code === "conflict");
+  });
+});
+
+test("maintenance permanently removes expired publications", async () => {
+  await withService(async ({ service, dataDir, setNow }) => {
+    const published = await service.publish(cardContent(), operationKey("expired-cleanup"));
+    const token = new URL(published.shareUrl).pathname.split("/").pop();
+    setNow("2027-09-12T00:00:01.000Z");
+
+    assert.equal(await service.cleanupExpired(), 1);
+    assert.equal((await service.load(token)).status, "not-found");
+    assert.equal((await service.getManaged(published.publicationId, published.managerToken)).status, "deleted");
+    await assert.rejects(readFile(path.join(dataDir, "records", `${published.publicationId}.json`)));
+  });
 });
 
 test("a failed photo validation never exposes a public index", async () => {
@@ -229,7 +275,7 @@ test("round-trips every unlock, both card templates, both gift branches, and all
     ];
     for (const [index, unlock] of unlocks.entries()) {
       const gift = index % 2
-        ? { kind: "link", title: "", description: "", externalUrl: "https://gift.example.com/redeem" }
+        ? { kind: "link", title: "", description: "", externalUrl: "https://3.cn/-SafeGift123" }
         : { kind: "none", title: "", description: "", externalUrl: "" };
       const candidate = cardContent({
         unlock,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { MANAGER_COOKIE_NAME, PersistenceError, persistence } from "@/lib/persistence";
+import { acquirePublishSlot, assertPublishRate } from "@/lib/persistence/publish-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ async function readBoundedBody(request: Request): Promise<string> {
     total += value.byteLength;
     if (total > MAX_REQUEST_BYTES) {
       await reader.cancel();
-      throw new PersistenceError("bad-request", "照片总大小过大，请压缩后重试。");
+      throw new PersistenceError("payload-too-large", "照片总大小过大，请压缩后重试。");
     }
     chunks.push(Buffer.from(value));
   }
@@ -26,10 +27,19 @@ async function readBoundedBody(request: Request): Promise<string> {
 
 function errorResponse(error: unknown) {
   if (error instanceof PersistenceError) {
-    const status = error.code === "forbidden" ? 403 : error.code === "conflict" ? 409 : 400;
+    const status = error.code === "forbidden" ? 403
+      : error.code === "conflict" ? 409
+      : error.code === "payload-too-large" ? 413
+      : error.code === "rate-limited" ? 429
+      : error.code === "storage-exhausted" ? 507
+      : 400;
     return NextResponse.json(
       { error: error.code, message: error.message },
-      { status, headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } },
+      { status, headers: {
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        ...(status === 429 ? { "Retry-After": "60" } : {}),
+      } },
     );
   }
   return NextResponse.json(
@@ -39,6 +49,7 @@ function errorResponse(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  let release: (() => void) | undefined;
   try {
     const { config, service } = persistence();
     if (request.headers.get("origin") !== config.appOrigin) {
@@ -47,9 +58,11 @@ export async function POST(request: Request) {
     if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
       throw new PersistenceError("bad-request", "发布内容必须使用 JSON 格式。");
     }
+    assertPublishRate(request);
+    release = await acquirePublishSlot();
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_REQUEST_BYTES) {
-      throw new PersistenceError("bad-request", "照片总大小过大，请压缩后重试。");
+      throw new PersistenceError("payload-too-large", "照片总大小过大，请压缩后重试。");
     }
     const raw = await readBoundedBody(request);
     let body: unknown;
@@ -59,12 +72,20 @@ export async function POST(request: Request) {
       throw new PersistenceError("bad-request", "发布内容格式不正确。");
     }
     const input = body && typeof body === "object" ? body as Record<string, unknown> : {};
+    const consent = input.consent && typeof input.consent === "object"
+      ? input.consent as Record<string, unknown>
+      : {};
+    if (consent.termsAccepted !== true) {
+      throw new PersistenceError("bad-request", "请先阅读并完成发布确认。");
+    }
     const idempotencyKey = request.headers.get("idempotency-key") ?? "";
     const managerToken = request.headers.get("cookie")
       ?.split(";")
       .map((part) => part.trim().split("="))
       .find(([name]) => name === MANAGER_COOKIE_NAME)?.[1];
-    const result = await service.publish(input.content, idempotencyKey, managerToken);
+    const result = await service.publish(input.content, idempotencyKey, managerToken, {
+      acceptedAt: new Date().toISOString(),
+    });
     const response = NextResponse.json(
       {
         publicationId: result.publicationId,
@@ -84,5 +105,7 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     return errorResponse(error);
+  } finally {
+    release?.();
   }
 }

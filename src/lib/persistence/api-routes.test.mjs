@@ -14,7 +14,7 @@ function content() {
     opening: { templateId: "warm-letter", title: "Mia，生日快乐！", prompt: "Sunny 留了一份生日惊喜。" },
     unlock: { kind: "rps" },
     memory: { kind: "card", card: { templateId: "cream-wishes", message: "愿你新的一岁继续做喜欢的事。", signature: "Sunny" } },
-    gift: { kind: "link", title: "", description: "", externalUrl: "https://gift.example.com/redeem?id=test" },
+    gift: { kind: "link", title: "", description: "", externalUrl: "https://3.cn/-SafeGift123" },
     share: { title: "Mia 的生日惊喜", text: "Sunny 准备了一份生日惊喜。" },
   };
 }
@@ -28,6 +28,7 @@ test("publish and revoke routes keep receiver and manager credentials separate",
   try {
     const publishRoute = await import("../../app/api/publish/route.ts");
     const revokeRoute = await import("../../app/api/manage/[publicationId]/revoke/route.ts");
+    const deleteRoute = await import("../../app/api/manage/[publicationId]/delete/route.ts");
     for (const origin of [undefined, "https://attacker.example"]) {
       const rejected = await publishRoute.POST(new Request("http://127.0.0.1:3199/api/publish", {
         method: "POST",
@@ -40,6 +41,16 @@ test("publish and revoke routes keep receiver and manager credentials separate",
       method: "POST", headers: { origin: "http://127.0.0.1:3199", "content-type": "text/plain" }, body: "{}",
     }));
     assert.equal(wrongFormat.status, 400);
+    const missingConsent = await publishRoute.POST(new Request("http://127.0.0.1:3199/api/publish", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://127.0.0.1:3199",
+        "idempotency-key": createHash("sha256").update("missing-consent").digest("base64url"),
+      },
+      body: JSON.stringify({ content: content() }),
+    }));
+    assert.equal(missingConsent.status, 400);
     const request = new Request("http://untrusted-host.example/api/publish", {
       method: "POST",
       headers: {
@@ -47,7 +58,7 @@ test("publish and revoke routes keep receiver and manager credentials separate",
         origin: "http://127.0.0.1:3199",
         "idempotency-key": createHash("sha256").update("route-operation").digest("base64url"),
       },
-      body: JSON.stringify({ content: content() }),
+      body: JSON.stringify({ content: content(), consent: { termsAccepted: true } }),
     });
     const published = await publishRoute.POST(request);
     assert.equal(published.status, 201);
@@ -98,6 +109,17 @@ test("publish and revoke routes keep receiver and manager credentials separate",
     assert.equal(revoked.status, 200);
     assert.equal((await revoked.json()).status, "revoked");
     assert.equal((await (await list([body.publicationId])).json()).works[0].status, "revoked");
+
+    const deleted = await deleteRoute.POST(
+      new NextRequest(`http://127.0.0.1:3199/api/manage/${body.publicationId}/delete`, {
+        method: "POST",
+        headers: { cookie: cookiePair, origin: "http://127.0.0.1:3199" },
+      }),
+      { params: Promise.resolve({ publicationId: body.publicationId }) },
+    );
+    assert.equal(deleted.status, 200);
+    assert.equal((await deleted.json()).status, "deleted");
+    assert.equal((await (await list([body.publicationId])).json()).works[0].status, "deleted");
   } finally {
     await rm(dataDir, { recursive: true, force: true });
   }

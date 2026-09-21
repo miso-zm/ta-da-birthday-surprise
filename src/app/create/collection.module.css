@@ -67,7 +67,7 @@
 @media (max-width: 374px) { .page { padding-inline: 18px; } .collectionHeading { padding-inline: 14px; } .collectionHeading h1 { font-size: 28px; } .companion img { width: 96px; height: 96px; } .workTop { gap: 10px; } .workCard { padding: 16px; } .cover { width: 58px; } }
 .result { max-width: 430px; min-height: 100dvh; margin: 0 auto; display: flex; align-items: center; padding: 24px 20px; }
 .resultCard { width: 100%; padding: 22px 24px 16px; border-radius: var(--radius-md); background: var(--color-on-dark); box-shadow: var(--shadow-card); text-align: center; }
-.hero { margin: 0 auto 10px; width: 140px; height: 140px; object-fit: contain; }
+.hero { margin: 0 auto -14px; width: 180px; height: 180px; object-fit: contain; }
 .resultFooter { display: flex; justify-content: center; gap: 24px; margin-top: 16px; padding-top: 10px; color: var(--color-ink); font-size: 13px; }
 .resultFooter a { display: flex; align-items: center; min-height: 44px; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
 .resultCard h1 { font-size: clamp(25px, 7vw, 30px); font-weight: 700; line-height: 1.4; letter-spacing: -0.04em; }

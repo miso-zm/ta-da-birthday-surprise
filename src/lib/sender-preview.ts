@@ -3,7 +3,6 @@ import {
   SCRAPBOOK_DESCRIPTION_MAX_LENGTH,
   SCRAPBOOK_TEMPLATE_SLOT_COUNTS,
   SENDER_STEPS,
-  isHttpsUrl,
   type SenderDraft,
   type SenderPreviewResult,
   type SenderStep,
@@ -11,6 +10,7 @@ import {
   type SurprisePreview,
   type UnlockConfig,
 } from "./surprise-contract";
+import { getPublicGiftLink } from "./gift-link-policy";
 
 export function createDefaultSenderDraft(
   updatedAt = new Date().toISOString(),
@@ -21,10 +21,10 @@ export function createDefaultSenderDraft(
     updatedAt,
     basics: {
       recipientName: "Mia",
-      senderName: "Sunny",
+      senderName: "Miso",
       openingTemplateId: "warm-letter",
       openingTitle: "Mia，生日快乐！",
-      openingPrompt: "Sunny 留了一段想对你说的话，还有一份小礼物，等你亲手打开。",
+      openingPrompt: "Miso 留了一段想对你说的话，还有一份小礼物，等你亲手打开。",
     },
     memoryKind: "card",
     unlock: {
@@ -34,7 +34,7 @@ export function createDefaultSenderDraft(
     card: {
       templateId: "coral-birthday",
       message: "愿新的一岁里，你还可以做喜欢的事，见喜欢的人，也别忘了照顾好自己。",
-      signature: "Sunny",
+      signature: "Miso",
     },
     scrapbook: {
       templateId: "one-photo",
@@ -42,10 +42,10 @@ export function createDefaultSenderDraft(
       slots: [{ id: "memory-1", transform: { x: 0, y: 0, scale: 1 } }],
     },
     gift: {
-      kind: "link",
+      kind: "none",
       title: "一本属于你的年度照片书",
       description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
-      externalUrl: "https://example.com",
+      externalUrl: "",
     },
     portraitChoiceMade: false,
   };
@@ -116,9 +116,9 @@ export function validateSenderDraft(
 
   if (
     draft.gift.kind === "link" &&
-    !isHttpsUrl(draft.gift.externalUrl.trim())
+    !getPublicGiftLink(draft.gift.externalUrl)
   ) {
-    add("gift", "请填写有效的 HTTPS 礼物领取链接。");
+    add("gift", "请粘贴淘宝或京东“送礼”后复制的内容或礼物链接。");
   }
 
   return errors;
@@ -223,7 +223,7 @@ export function senderDraftToPreview(
       kind: draft.gift.kind,
       title: draft.gift.title.trim(),
       description: draft.gift.description.trim(),
-      externalUrl: draft.gift.externalUrl.trim(),
+      externalUrl: getPublicGiftLink(draft.gift.externalUrl)?.url ?? draft.gift.externalUrl.trim(),
     },
     share: {
       title: `${recipientName} 的生日惊喜`,

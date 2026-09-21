@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { getPublicGiftLink } from "../gift-link-policy";
 import {
   FIND_GIFT_TARGET_IDS,
   PORTRAIT_TEMPLATE_IDS,
@@ -109,18 +110,12 @@ function isPrivateIpv6(hostname: string): boolean {
 }
 
 export function validateGiftUrl(value: string): string {
-  if (value.length > 2048 || /[\u0000-\u001f\u007f]/.test(value)) {
+  if (value.length > 4096 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)) {
     throw new PersistenceError("bad-request", "Gift URL is invalid.");
   }
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new PersistenceError("bad-request", "Gift URL is invalid.");
-  }
-  if (url.protocol !== "https:" || url.username || url.password) {
-    throw new PersistenceError("bad-request", "Gift URL must be a credential-free HTTPS URL.");
-  }
+  const link = getPublicGiftLink(value);
+  if (!link) throw new PersistenceError("bad-request", "礼物链接必须是支持平台的官方送礼链接。");
+  const url = new URL(link.url);
   const hostname = url.hostname.replace(/^\[|\]$/g, "").replace(/\.$/, "").toLowerCase();
   if (
     !hostname ||
@@ -133,7 +128,7 @@ export function validateGiftUrl(value: string): string {
   ) {
     throw new PersistenceError("bad-request", "Private-network gift URLs are not allowed.");
   }
-  return url.toString();
+  return link.url;
 }
 
 function finiteNumber(value: unknown, label: string, minimum: number, maximum: number) {
@@ -267,7 +262,7 @@ export function validatePublicationInput(input: unknown): ValidatedPublication {
         kind: "link" as const,
         title: typeof gift.title === "string" ? gift.title.slice(0, 40).trim() : "",
         description: typeof gift.description === "string" ? gift.description.slice(0, 120).trim() : "",
-        externalUrl: validateGiftUrl(text(gift.externalUrl, "Gift URL", 1, 2048)),
+        externalUrl: validateGiftUrl(text(gift.externalUrl, "Gift URL", 1, 4096)),
       }
     : { kind: "none" as const, title: "", description: "", externalUrl: "" };
 
