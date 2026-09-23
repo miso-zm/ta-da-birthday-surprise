@@ -98,7 +98,7 @@ export type LoadedPublication =
 
 export type ManagedPublication = {
   id: string;
-  status: PublicationStatus | "expired";
+  status: PublicationStatus | "expired" | "deleting";
   createdAt: string;
   expiresAt: string;
 };

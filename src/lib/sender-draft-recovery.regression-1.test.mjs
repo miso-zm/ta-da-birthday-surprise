@@ -24,3 +24,21 @@ test("earlier invalid steps still take precedence over the portrait decision", (
 
   assert.deepEqual(getSenderResumeLocation(draft), { step: "basics" });
 });
+
+test("a recovered scrapbook with a missing required photo resumes at photo repair", () => {
+  const draft = createDefaultSenderDraft();
+  draft.memoryKind = "scrapbook";
+  draft.scrapbook = {
+    templateId: "two-photo",
+    description: "保留的文字",
+    slots: [
+      { id: "memory-1", imageUrl: "data:image/png;base64,cGhvdG8=", transform: { x: 0, y: 0, scale: 1 } },
+      { id: "memory-2", transform: { x: 0, y: 0, scale: 1 } },
+    ],
+  };
+
+  assert.deepEqual(getSenderResumeLocation(draft), {
+    step: "memory",
+    memoryScreen: "scrapbook",
+  });
+});

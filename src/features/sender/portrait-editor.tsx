@@ -10,6 +10,7 @@ import {
   clampPlacement,
   composePortraitTemplate,
 } from "../../lib/portrait/template";
+import { PortraitTaskLifecycle, type PortraitTask } from "./portrait-task-lifecycle";
 import styles from "./portrait-editor.module.css";
 
 type PortraitEditorProps = {
@@ -39,21 +40,43 @@ function defaultTransform(templateId: PortraitTemplateId): PortraitTransform {
   return { ...source };
 }
 
-function blobToDataUrl(blob: Blob): Promise<string> {
+function abortError() {
+  return new DOMException("已取消", "AbortError");
+}
+
+function blobToDataUrl(blob: Blob, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("图片暂时无法保存，请重试。"));
+    let settled = false;
+    const finish = (error?: Error, value?: string) => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", onAbort);
+      if (error) reject(error); else resolve(value!);
+    };
+    const onAbort = () => {
+      if (reader.readyState === FileReader.LOADING) reader.abort();
+      finish(abortError());
+    };
+    if (signal?.aborted) return finish(abortError());
+    signal?.addEventListener("abort", onAbort, { once: true });
+    reader.onerror = () => finish(new Error("图片暂时无法保存，请重试。"));
+    reader.onabort = () => finish(abortError());
     reader.onload = () => typeof reader.result === "string"
-      ? resolve(reader.result)
-      : reject(new Error("图片暂时无法保存，请重试。"));
+      ? finish(undefined, reader.result)
+      : finish(new Error("图片暂时无法保存，请重试。"));
     reader.readAsDataURL(blob);
   });
 }
 
-async function dataUrlToBlob(value: string): Promise<Blob> {
-  const response = await fetch(value);
+async function dataUrlToBlob(value: string, signal?: AbortSignal): Promise<Blob> {
+  const response = await fetch(value, { signal });
   if (!response.ok) throw new Error("已处理的照片无法读取，请重新选择。");
   return response.blob();
+}
+
+function isAbortError(value: unknown) {
+  return value instanceof DOMException && value.name === "AbortError";
 }
 
 function phaseLabel(phase: PortraitPhase | "composing" | null) {
@@ -67,9 +90,8 @@ function phaseLabel(phase: PortraitPhase | "composing" | null) {
 
 export function PortraitEditor({ value, recipientName, onChange, onBusyChange }: PortraitEditorProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const renderVersion = useRef(0);
-  const composeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lifecycle] = useState(() => new PortraitTaskLifecycle());
+  const onBusyChangeRef = useRef(onBusyChange);
   const drag = useRef<{
     pointerId: number;
     startX: number;
@@ -89,27 +111,39 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
     setPlacement(nextPlacement);
   }
 
+  useEffect(() => {
+    onBusyChangeRef.current = onBusyChange;
+  }, [onBusyChange]);
+
   useEffect(() => () => {
-    abortRef.current?.abort();
-    if (composeTimer.current) clearTimeout(composeTimer.current);
-  }, []);
+    // Cancel is reusable so React development-mode effect replay does not
+    // leave this mounted editor with a permanently disposed coordinator.
+    lifecycle.cancel();
+    onBusyChangeRef.current?.(false);
+  }, [lifecycle]);
 
   useEffect(() => {
     onBusyChange?.(Boolean(phase));
   }, [onBusyChange, phase]);
 
-  async function compose(stickerImageUrl: string, templateId: PortraitTemplateId, nextPlacement: PortraitTransform) {
-    const version = ++renderVersion.current;
+  function cancelCurrentTask() {
+    lifecycle.cancel();
+    setPhase(null);
+  }
+
+  async function compose(task: PortraitTask, stickerImageUrl: string, templateId: PortraitTemplateId, nextPlacement: PortraitTransform) {
+    if (!lifecycle.isCurrent(task)) return;
     setPhase("composing");
     setError("");
     try {
       const result = await composePortraitTemplate({
-        sticker: await dataUrlToBlob(stickerImageUrl),
+        sticker: await dataUrlToBlob(stickerImageUrl, task.signal),
         template: templateId,
         portrait: nextPlacement,
+        signal: task.signal,
       });
-      const posterImageUrl = await blobToDataUrl(result.blob);
-      if (version !== renderVersion.current) return;
+      const posterImageUrl = await blobToDataUrl(result.blob, task.signal);
+      if (!lifecycle.isCurrent(task)) return;
       setPreviewUrl(posterImageUrl);
       onChange({
         templateId,
@@ -118,19 +152,24 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
         transform: result.portrait,
       });
     } catch (caught) {
-      if (version !== renderVersion.current) return;
+      if (isAbortError(caught) || !lifecycle.isCurrent(task)) return;
       setError(caught instanceof Error ? caught.message : "模板暂时没有生成，请重试。");
     } finally {
-      if (version === renderVersion.current) setPhase(null);
+      if (lifecycle.settle(task)) setPhase(null);
     }
+  }
+
+  function startCompose(stickerImageUrl: string, templateId: PortraitTemplateId, nextPlacement: PortraitTransform) {
+    const task = lifecycle.begin();
+    void compose(task, stickerImageUrl, templateId, nextPlacement);
   }
 
   function scheduleCompose(nextPlacement: PortraitTransform, templateId = value?.templateId ?? "balloon") {
     updatePlacement(nextPlacement);
     if (!value?.stickerImageUrl) return;
-    if (composeTimer.current) clearTimeout(composeTimer.current);
-    composeTimer.current = setTimeout(() => {
-      void compose(value.stickerImageUrl, templateId, nextPlacement);
+    const stickerImageUrl = value.stickerImageUrl;
+    lifecycle.schedule(() => {
+      startCompose(stickerImageUrl, templateId, nextPlacement);
     }, 140);
   }
 
@@ -138,31 +177,31 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+    const task = lifecycle.begin();
     setError("");
     try {
       const cutout = await removePortraitBackground(file, {
-        signal: controller.signal,
-        onPhase: setPhase,
+        signal: task.signal,
+        onPhase: (nextPhase) => {
+          if (lifecycle.isCurrent(task)) setPhase(nextPhase);
+        },
       });
       const sticker = await createPortraitSticker(cutout.blob, {
         displayWidth: 300,
         pixelRatio: 2,
-        signal: controller.signal,
+        signal: task.signal,
       });
-      const stickerImageUrl = await blobToDataUrl(sticker.blob);
+      const stickerImageUrl = await blobToDataUrl(sticker.blob, task.signal);
+      if (!lifecycle.isCurrent(task)) return;
       const templateId = value?.templateId ?? "balloon";
       const nextPlacement = defaultTransform(templateId);
       updatePlacement(nextPlacement);
-      await compose(stickerImageUrl, templateId, nextPlacement);
+      await compose(task, stickerImageUrl, templateId, nextPlacement);
     } catch (caught) {
-      if (caught instanceof DOMException && caught.name === "AbortError") return;
+      if (isAbortError(caught) || !lifecycle.isCurrent(task)) return;
       setError(caught instanceof Error ? caught.message : "抠图没有完成，请重试或换一张照片。");
-      setPhase(null);
     } finally {
-      if (abortRef.current === controller) abortRef.current = null;
+      if (lifecycle.settle(task)) setPhase(null);
     }
   }
 
@@ -170,7 +209,7 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
     if (!value?.stickerImageUrl || templateId === value.templateId) return;
     const nextPlacement = defaultTransform(templateId);
     updatePlacement(nextPlacement);
-    void compose(value.stickerImageUrl, templateId, nextPlacement);
+    startCompose(value.stickerImageUrl, templateId, nextPlacement);
   }
 
   function resetPlacement() {
@@ -207,11 +246,7 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
     if (drag.current?.pointerId !== event.pointerId) return;
     drag.current = null;
     event.currentTarget.releasePointerCapture(event.pointerId);
-    if (composeTimer.current) {
-      clearTimeout(composeTimer.current);
-      composeTimer.current = null;
-    }
-    if (value?.stickerImageUrl) void compose(value.stickerImageUrl, value.templateId, placementRef.current);
+    if (value?.stickerImageUrl) startCompose(value.stickerImageUrl, value.templateId, placementRef.current);
   }
 
   return (
@@ -220,7 +255,7 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
         <div className={styles.heading}>
           <strong>调整主角海报</strong>
           <button type="button" className={styles.remove} onClick={() => {
-            renderVersion.current += 1;
+            cancelCurrentTask();
             setPreviewUrl("");
             updatePlacement(defaultTransform("balloon"));
             setError("");
@@ -303,7 +338,7 @@ export function PortraitEditor({ value, recipientName, onChange, onBusyChange }:
       {phase && !value ? (
         <div className={styles.processing} role="status">
           <span>{phaseLabel(phase)}</span>
-          <button type="button" onClick={() => abortRef.current?.abort()}>取消</button>
+          <button type="button" onClick={cancelCurrentTask}>取消</button>
         </div>
       ) : null}
       {error ? <p className={styles.error} role="alert">{error}</p> : null}

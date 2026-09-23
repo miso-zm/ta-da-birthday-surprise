@@ -718,8 +718,10 @@ export function SenderBuilder({
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [cropError, setCropError] = useState("");
   const [publishState, setPublishState] = useState<"idle" | "publishing" | "error">("idle");
+  const publishRequestInFlight = useRef(false);
   const [publishError, setPublishError] = useState("");
   const [legalConsent, setLegalConsent] = useState(false);
+  const [giftInput, setGiftInput] = useState(initialDraft?.gift.externalUrl ?? "");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveVersion = useRef(0);
   const scrollArea = useRef<HTMLDivElement | null>(null);
@@ -739,6 +741,7 @@ export function SenderBuilder({
     let cancelled = false;
     if (initialDraft) {
       setDraft(initialDraft);
+      setGiftInput(initialDraft.gift.externalUrl);
       const location = getSenderResumeLocation(initialDraft);
       setCurrentStep(location.step);
       setMemoryScreen(location.memoryScreen ?? "choice");
@@ -758,10 +761,10 @@ export function SenderBuilder({
       if (cancelled) return;
       if (result.status === "ready") {
         setRecoverableDraft(result.draft);
+        setLoadMessage(result.notice ?? "");
         setScreen(window.location.hash === "#draft" ? "recover" : "welcome");
       } else {
         if (result.status === "invalid") setLoadMessage(result.reason);
-        setDraft(createDefaultSenderDraft());
         setScreen("welcome");
       }
     });
@@ -787,6 +790,7 @@ export function SenderBuilder({
         if (version !== saveVersion.current) return;
         setSaveState(result.ok ? "saved" : "error");
         setSaveError(result.ok ? "" : result.reason);
+        if (result.ok) setRecoverableDraft(draft);
       });
     }, 250);
 
@@ -826,6 +830,7 @@ export function SenderBuilder({
     if (!recoverableDraft) return;
     const location = getSenderResumeLocation(recoverableDraft);
     setDraft(recoverableDraft);
+    setGiftInput(recoverableDraft.gift.externalUrl);
     setCurrentStep(location.step);
     setMemoryScreen(location.memoryScreen ?? "choice");
     setScreen("edit");
@@ -841,6 +846,7 @@ export function SenderBuilder({
     const oldDraftId = recoverableDraft?.draftId ?? draft.draftId;
     void clearSenderPortraitMedia(oldDraftId);
     setDraft(createDefaultSenderDraft());
+    setGiftInput("");
     setCurrentStep("basics");
     setRecoverableDraft(null);
     setScreen("edit");
@@ -879,6 +885,7 @@ export function SenderBuilder({
           setSaveError(result.ok ? "" : result.reason);
         });
       }
+      setRecoverableDraft(draft);
       setScreen("welcome");
       return;
     }
@@ -931,6 +938,7 @@ export function SenderBuilder({
   }
 
   async function publishSurprise() {
+    if (publishRequestInFlight.current) return;
     const result = senderDraftToPreview(draft);
     if (!result.ok) {
       setCurrentStep(result.firstIncompleteStep);
@@ -945,6 +953,9 @@ export function SenderBuilder({
       });
       return;
     }
+    publishRequestInFlight.current = true;
+    setPublishState("publishing");
+    setPublishError("");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     onDraftChangeRef.current?.(draft);
     const storage = getBrowserDraftStorage();
@@ -952,15 +963,18 @@ export function SenderBuilder({
       const saveResult = await saveSenderDraftWithMedia(storage, draft);
       setSaveState(saveResult.ok ? "saved" : "error");
       setSaveError(saveResult.ok ? "" : saveResult.reason);
+    } else {
+      setSaveState("error");
+      setSaveError("当前浏览器无法保存草稿。");
     }
-    setPublishState("publishing");
-    setPublishError("");
     try {
       await onPublish(result.preview, draft);
       setPublishState("idle");
     } catch (error) {
       setPublishState("error");
-      setPublishError(error instanceof Error ? error.message : "发布没有完成，草稿已保留。");
+      setPublishError(error instanceof Error ? error.message : "发布没有完成，请重试。");
+    } finally {
+      publishRequestInFlight.current = false;
     }
   }
 
@@ -1651,19 +1665,25 @@ export function SenderBuilder({
                     selected={draft.gift.kind === "none"}
                     title="这次只送生日贺卡"
                     description="不加额外礼物，直接把这份生日卡或手帐送给 TA"
-                    onClick={() => replaceDraft((previous) => ({
-                      ...previous,
-                      gift: { ...previous.gift, kind: "none" },
-                    }))}
+                    onClick={() => {
+                      setGiftInput("");
+                      replaceDraft((previous) => ({
+                        ...previous,
+                        gift: { kind: "none", title: "", description: "", externalUrl: "" },
+                      }));
+                    }}
                   />
                   <ChoiceCard
                     selected={draft.gift.kind === "link"}
                     title="还有一份小礼物"
                     description="粘贴淘宝或京东送礼后复制的内容"
-                    onClick={() => replaceDraft((previous) => ({
-                      ...previous,
-                      gift: { ...previous.gift, kind: "link" },
-                    }))}
+                    onClick={() => {
+                      setGiftInput("");
+                      replaceDraft((previous) => ({
+                        ...previous,
+                        gift: { kind: "link", title: "", description: "", externalUrl: "" },
+                      }));
+                    }}
                   />
                 </div>
               </fieldset>
@@ -1677,18 +1697,22 @@ export function SenderBuilder({
                       autoCapitalize="none"
                       autoCorrect="off"
                       maxLength={4096}
-                      value={draft.gift.externalUrl}
+                      value={giftInput}
                       placeholder="粘贴淘宝或京东送礼内容"
                       onChange={(event) => {
                         const pastedValue = event.target.value;
                         const extracted = getPublicGiftLink(pastedValue);
+                        setGiftInput(pastedValue);
                         replaceDraft((previous) => ({
                           ...previous,
-                          gift: { ...previous.gift, externalUrl: extracted?.url ?? pastedValue },
+                          gift: { kind: "link", title: "", description: "", externalUrl: extracted?.url ?? "" },
                         }));
                       }}
                     />
                   </Field>
+                  {giftInput.trim() && !getPublicGiftLink(giftInput) ? (
+                    <p className={styles.notice} role="alert">没有识别到唯一可用的淘宝或京东送礼链接，请检查后继续编辑。</p>
+                  ) : null}
                   <TadaMessage message="淘宝提取码请另行发给 TA；送礼链接可能由最先打开的人领取。" />
                 </>
               ) : null}

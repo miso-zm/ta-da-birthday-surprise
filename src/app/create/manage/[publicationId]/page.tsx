@@ -42,11 +42,13 @@ export default async function ManagePublicationPage({
         <p className="mt-3 text-sm font-semibold leading-6 text-[var(--muted)]">
           {publication.status === "deleted"
             ? "这份惊喜已永久删除。"
+            : publication.status === "deleting"
+              ? "公开访问已停止，服务器内容和照片仍在清理中。"
             : inactive
               ? "这份惊喜已经收起来了。"
               : `有效期至 ${new Date(publication.expiresAt).toLocaleDateString("zh-CN")}。`}
         </p>
-        {publication.status !== "deleted" ? <ManageControls publicationId={publication.id} initialStatus={publication.status === "active" ? "active" : publication.status === "revoked" ? "revoked" : "expired"} /> : null}
+        {publication.status !== "deleted" ? <ManageControls publicationId={publication.id} initialStatus={publication.status} /> : null}
         <a href="/create" className="mt-3 flex min-h-11 items-center justify-center text-sm font-bold text-[var(--ink)] underline underline-offset-4">
           继续修改草稿
         </a>

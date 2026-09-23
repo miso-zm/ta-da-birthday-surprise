@@ -7,19 +7,20 @@ import {
   type ScrapbookTemplateId,
   PORTRAIT_TEMPLATE_IDS,
 } from "./surprise-contract";
+import { getPublicGiftLink } from "./gift-link-policy";
 
 export const SENDER_DRAFT_STORAGE_KEY = "ta-da:sender-draft:v1";
 
 export type SenderDraftLoadResult =
   | { status: "empty" }
-  | { status: "ready"; draft: SenderDraft }
+  | { status: "ready"; draft: SenderDraft; notice?: string }
   | { status: "invalid"; reason: string };
 
 export type SenderDraftSaveResult =
   | { ok: true }
   | { ok: false; reason: string };
 
-type ReadableStorage = Pick<Storage, "getItem">;
+type ReadableStorage = Pick<Storage, "getItem"> & Partial<Pick<Storage, "setItem">>;
 type WritableStorage = Pick<Storage, "setItem" | "removeItem">;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -123,6 +124,37 @@ function migrateLegacySenderDraft(value: unknown): unknown {
   return migrated;
 }
 
+function normalizeStoredGift(value: unknown): { value: unknown; changed: boolean; notice?: string } {
+  if (!isRecord(value) || !isRecord(value.gift)) return { value, changed: false };
+  const gift = value.gift;
+  if (gift.kind === "none") {
+    const normalizedGift = { kind: "none", title: "", description: "", externalUrl: "" };
+    return {
+      value: { ...value, gift: normalizedGift },
+      changed: JSON.stringify(gift) !== JSON.stringify(normalizedGift),
+    };
+  }
+  if (gift.kind !== "link" || !isString(gift.externalUrl)) return { value, changed: false };
+  const link = getPublicGiftLink(gift.externalUrl);
+  const hadUnrecognizedInput = Boolean(gift.externalUrl.trim() && !link);
+  const normalizedGift = {
+    kind: "link",
+    title: "",
+    description: "",
+    externalUrl: link?.url ?? "",
+  };
+  return {
+    value: { ...value, gift: normalizedGift },
+    changed: JSON.stringify(gift) !== JSON.stringify(normalizedGift),
+    ...(hadUnrecognizedInput ? { notice: "旧草稿中的礼物内容无法识别，已清除，请重新填写。" } : {}),
+  };
+}
+
+function normalizedDraftForStorage(draft: SenderDraft): SenderDraft {
+  const normalized = normalizeStoredGift(draft);
+  return normalized.value as SenderDraft;
+}
+
 function isSenderUnlockDraft(value: unknown): value is SenderUnlockDraft {
   if (!isRecord(value)) {
     return false;
@@ -221,14 +253,33 @@ export function loadSenderDraft(
     }
     const parsed: unknown = JSON.parse(serialized);
     const migrated = migrateLegacySenderDraft(parsed);
+    const normalized = normalizeStoredGift(migrated);
 
-    if (isSenderDraft(migrated)) {
-      return { status: "ready", draft: migrated };
+    if (isSenderDraft(normalized.value)) {
+      let notice = normalized.notice;
+      if (normalized.changed && storage.setItem) {
+        try {
+          storage.setItem(SENDER_DRAFT_STORAGE_KEY, JSON.stringify(normalized.value));
+        } catch {
+          notice = "旧草稿中的礼物内容已在本次会话清除，但浏览器暂时未能更新，请重新填写后继续。";
+        }
+      }
+      return { status: "ready", draft: normalized.value, ...(notice ? { notice } : {}) };
     }
-    if (hasSenderDraftShape(migrated) && migrated.memoryKind === undefined) {
+    if (hasSenderDraftShape(normalized.value) && normalized.value.memoryKind === undefined) {
+      const draft = { ...normalized.value, memoryKind: "card" } as SenderDraft;
+      let notice = normalized.notice;
+      if (storage.setItem) {
+        try {
+          storage.setItem(SENDER_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        } catch {
+          notice = "旧草稿已在本次会话更新，但浏览器暂时未能保存；请继续编辑后再试。";
+        }
+      }
       return {
         status: "ready",
-        draft: { ...migrated, memoryKind: "card" } as SenderDraft,
+        draft,
+        ...(notice ? { notice } : {}),
       };
     }
     return { status: "invalid", reason: "草稿格式已过期或不完整。" };
@@ -242,7 +293,7 @@ export function saveSenderDraft(
   draft: SenderDraft,
 ): SenderDraftSaveResult {
   try {
-    storage.setItem(SENDER_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    storage.setItem(SENDER_DRAFT_STORAGE_KEY, JSON.stringify(normalizedDraftForStorage(draft)));
     return { ok: true };
   } catch {
     return { ok: false, reason: "浏览器空间不足，草稿暂时无法保存。" };

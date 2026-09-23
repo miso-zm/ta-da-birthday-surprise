@@ -4,6 +4,7 @@ export class PersistenceError extends Error {
       | "bad-request"
       | "payload-too-large"
       | "rate-limited"
+      | "daily-rate-limited"
       | "storage-exhausted"
       | "deletion-pending"
       | "conflict"

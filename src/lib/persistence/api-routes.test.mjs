@@ -29,6 +29,7 @@ test("publish and revoke routes keep receiver and manager credentials separate",
     const publishRoute = await import("../../app/api/publish/route.ts");
     const revokeRoute = await import("../../app/api/manage/[publicationId]/revoke/route.ts");
     const deleteRoute = await import("../../app/api/manage/[publicationId]/delete/route.ts");
+    const refreshMediaRoute = await import("../../app/api/s/[slug]/media/route.ts");
     for (const origin of [undefined, "https://attacker.example"]) {
       const rejected = await publishRoute.POST(new Request("http://127.0.0.1:3199/api/publish", {
         method: "POST",
@@ -90,6 +91,24 @@ test("publish and revoke routes keep receiver and manager credentials separate",
     assert.equal((await list([body.publicationId], cookiePair, "https://attacker.example")).status, 403);
     assert.equal((await list(["../records"])).status, 400);
     assert.equal((await list(Array(101).fill(body.publicationId))).status, 400);
+    const publicToken = new URL(body.shareUrl).pathname.split("/").pop();
+    const refreshedMedia = await refreshMediaRoute.POST(
+      new Request(`http://127.0.0.1:3199/api/s/${publicToken}/media`, {
+        method: "POST",
+        headers: { origin: "http://127.0.0.1:3199" },
+      }),
+      { params: Promise.resolve({ slug: publicToken }) },
+    );
+    assert.equal(refreshedMedia.status, 200);
+    assert.equal((await refreshedMedia.json()).surprise.slug, publicToken);
+    const crossOriginRefresh = await refreshMediaRoute.POST(
+      new Request(`http://127.0.0.1:3199/api/s/${publicToken}/media`, {
+        method: "POST",
+        headers: { origin: "https://attacker.example" },
+      }),
+      { params: Promise.resolve({ slug: publicToken }) },
+    );
+    assert.equal(crossOriginRefresh.status, 403);
     const badOrigin = await revokeRoute.POST(
       new NextRequest(`http://127.0.0.1:3199/api/manage/${body.publicationId}/revoke`, {
         method: "POST",
@@ -108,6 +127,14 @@ test("publish and revoke routes keep receiver and manager credentials separate",
     );
     assert.equal(revoked.status, 200);
     assert.equal((await revoked.json()).status, "revoked");
+    const closedRefresh = await refreshMediaRoute.POST(
+      new Request(`http://127.0.0.1:3199/api/s/${publicToken}/media`, {
+        method: "POST",
+        headers: { origin: "http://127.0.0.1:3199" },
+      }),
+      { params: Promise.resolve({ slug: publicToken }) },
+    );
+    assert.equal(closedRefresh.status, 410);
     assert.equal((await (await list([body.publicationId])).json()).works[0].status, "revoked");
 
     const deleted = await deleteRoute.POST(

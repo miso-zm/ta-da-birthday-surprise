@@ -43,8 +43,8 @@ export function createDefaultSenderDraft(
     },
     gift: {
       kind: "none",
-      title: "一本属于你的年度照片书",
-      description: "想看的时候再打开它；看完以后，也可以回来重看这份祝福。",
+      title: "",
+      description: "",
       externalUrl: "",
     },
     portraitChoiceMade: false,
@@ -133,12 +133,15 @@ export function getFirstIncompleteSenderStep(
 
 export type SenderResumeLocation =
   | { step: SenderStep; memoryScreen?: undefined }
-  | { step: "memory"; memoryScreen: "portrait" };
+  | { step: "memory"; memoryScreen: "portrait" | "scrapbook" };
 
 export function getSenderResumeLocation(
   draft: SenderDraft,
 ): SenderResumeLocation {
   const firstIncompleteStep = getFirstIncompleteSenderStep(draft);
+  if (firstIncompleteStep === "memory" && draft.memoryKind === "scrapbook") {
+    return { step: "memory", memoryScreen: "scrapbook" };
+  }
   if (
     draft.portraitChoiceMade !== true &&
     (firstIncompleteStep === "gift" || firstIncompleteStep === "publish")
@@ -219,12 +222,14 @@ export function senderDraftToPreview(
     },
     unlock: toUnlockConfig(draft),
     memory,
-    gift: {
-      kind: draft.gift.kind,
-      title: draft.gift.title.trim(),
-      description: draft.gift.description.trim(),
-      externalUrl: getPublicGiftLink(draft.gift.externalUrl)?.url ?? draft.gift.externalUrl.trim(),
-    },
+    gift: draft.gift.kind === "link"
+      ? {
+          kind: "link",
+          title: "",
+          description: "",
+          externalUrl: getPublicGiftLink(draft.gift.externalUrl)?.url ?? "",
+        }
+      : { kind: "none", title: "", description: "", externalUrl: "" },
     share: {
       title: `${recipientName} 的生日惊喜`,
       text: `${senderName} 准备了一份生日惊喜，想和你分享。`,

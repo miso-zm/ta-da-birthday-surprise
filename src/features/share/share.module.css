@@ -2,6 +2,10 @@
 .illustration { position: relative; width: min(100%, 280px); margin: 0 auto 28px; padding-top: 26px; }
 .portraitPoster { width: min(100%, 340px); margin: 0 auto 24px; }
 .portraitPosterImage { display: block; width: 100%; height: auto; }
+.portraitRecovery { display: grid; place-items: center; gap: 12px; width: min(100%, 340px); min-height: 220px; margin: 0 auto 24px; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
+.portraitRecovery p { margin: 0; color: var(--muted); font-size: 14px; font-weight: 600; line-height: 1.6; }
+.portraitRecovery button { min-height: 44px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--page); color: var(--coral-dark); font-size: 14px; font-weight: 800; cursor: pointer; }
+.portraitRecovery button:disabled { cursor: wait; opacity: 0.62; }
 .tada { display: block; width: 100%; height: auto; transform: scale(1.35); }
 .confetti { position: absolute; inset: 0; pointer-events: none; }
 .confetti span { position: absolute; width: 6px; height: 12px; border-radius: var(--radius-round); background: var(--color-coral); transform: rotate(-30deg); }

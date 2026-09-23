@@ -60,3 +60,25 @@ test("rejects malformed and non-HTTPS links", () => {
   assert.equal(getGiftLinkPlatform("http://item.taobao.com/item.htm?id=123456789"), null);
   assert.equal(getGiftLinkPlatform("not-a-link"), null);
 });
+
+test("rejects repeated keys, extra parameters, fragments, and non-canonical paths", () => {
+  assert.equal(getGiftLinkPlatform("https://i.tb.cn/h.SafeGift123?tk=SafeToken123&tk=OtherToken456"), null);
+  assert.equal(getGiftLinkPlatform("https://i.tb.cn/h.SafeGift123?tk=SafeToken123&from=share"), null);
+  assert.equal(getGiftLinkPlatform("https://i.tb.cn/h.SafeGift123?tk=SafeToken123#gift"), null);
+  assert.equal(getGiftLinkPlatform("https://i.tb.cn//h.SafeGift123?tk=SafeToken123"), null);
+  assert.equal(getGiftLinkPlatform(`https://trade.m.jd.com/present?id=${"A".repeat(24)}&id=${"B".repeat(24)}`), null);
+  assert.equal(getGiftLinkPlatform(`https://trade.m.jd.com/present?id=${"A".repeat(24)}&from=share`), null);
+  assert.equal(getGiftLinkPlatform(`https://trade.m.jd.com/present?id=${"A".repeat(24)}#gift`), null);
+  assert.equal(getGiftLinkPlatform(`https://trade.m.jd.com//present?id=${"A".repeat(24)}`), null);
+});
+
+test("returns the same canonical URL that will be saved and opened", () => {
+  assert.equal(
+    getGiftLinkPlatform("https://I.TB.CN/h.SafeGift123?tk=SafeToken123")?.url,
+    "https://i.tb.cn/h.SafeGift123?tk=SafeToken123",
+  );
+  assert.equal(
+    getGiftLinkPlatform(`https://TRADE.M.JD.COM/present?id=${"A".repeat(24)}%3D%3D`)?.url,
+    `https://trade.m.jd.com/present?id=${"A".repeat(24)}%3D%3D`,
+  );
+});

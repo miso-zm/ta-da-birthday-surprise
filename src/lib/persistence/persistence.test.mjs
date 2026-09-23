@@ -43,6 +43,45 @@ function cardContent(overrides = {}) {
   };
 }
 
+async function scrapbookContent(overrides = {}) {
+  const source = await sharp({
+    create: { width: 80, height: 80, channels: 3, background: "#fa907b" },
+  }).png().toBuffer();
+  const imageUrl = `data:image/png;base64,${source.toString("base64")}`;
+  return cardContent({
+    memory: {
+      kind: "scrapbook",
+      scrapbook: {
+        templateId: "one-photo",
+        description: "虚构测试照片",
+        slots: [{ id: "memory-1", imageUrl, transform: { x: 0, y: 0, scale: 1 } }],
+      },
+    },
+    ...overrides,
+  });
+}
+
+async function interruptDelete(service, published, matchesPath) {
+  const remove = service.store.remove.bind(service.store);
+  let injected = false;
+  service.store.remove = async (relativePath) => {
+    if (!injected && matchesPath(relativePath)) {
+      injected = true;
+      throw new Error("Injected cleanup failure");
+    }
+    return remove(relativePath);
+  };
+  try {
+    await assert.rejects(
+      service.deletePublication(published.publicationId, published.managerToken),
+      /Injected cleanup failure/,
+    );
+    assert.equal(injected, true);
+  } finally {
+    service.store.remove = remove;
+  }
+}
+
 async function withService(fn) {
   const dataDir = await mkdtemp(path.join(os.tmpdir(), "tada-persistence-test-"));
   let now = new Date("2026-09-11T00:00:00.000Z");
@@ -180,6 +219,76 @@ test("stores only the final portrait poster and returns a signed receiver image"
   });
 });
 
+test("refreshes expired scrapbook and portrait signatures only while the publication remains active", async () => {
+  await withService(async ({ service, setNow }) => {
+    const portraitSource = await sharp({
+      create: { width: 120, height: 120, channels: 4, background: { r: 90, g: 130, b: 220, alpha: 1 } },
+    }).png().toBuffer();
+    const published = await service.publish(await scrapbookContent({
+      portrait: { templateId: "blue", imageUrl: `data:image/png;base64,${portraitSource.toString("base64")}` },
+    }), operationKey("refresh-expired-media"));
+    const token = new URL(published.shareUrl).pathname.split("/").pop();
+    const initial = await service.load(token);
+    assert.equal(initial.status, "active");
+    const originalUrls = [
+      initial.surprise.memory.scrapbook.slots[0].imageUrl,
+      initial.surprise.portrait.imageUrl,
+    ];
+
+    setNow("2026-09-11T00:11:00.000Z");
+    for (const url of originalUrls) {
+      const parsed = new URL(url);
+      await assert.rejects(
+        service.media(parsed.pathname.split("/").pop(), parsed.searchParams.get("expires"), parsed.searchParams.get("signature")),
+        (error) => error instanceof PersistenceError && error.code === "forbidden",
+      );
+    }
+
+    const refreshed = await service.refreshMedia(token);
+    assert.equal(refreshed.status, "active");
+    const renewedUrls = [
+      refreshed.surprise.memory.scrapbook.slots[0].imageUrl,
+      refreshed.surprise.portrait.imageUrl,
+    ];
+    assert.notDeepEqual(renewedUrls, originalUrls);
+    for (const url of renewedUrls) {
+      const parsed = new URL(url);
+      const media = await service.media(parsed.pathname.split("/").pop(), parsed.searchParams.get("expires"), parsed.searchParams.get("signature"));
+      assert.ok(media.bytes.length > 0);
+    }
+
+    await service.revoke(published.publicationId, published.managerToken);
+    assert.equal((await service.refreshMedia(token)).status, "closed");
+    await service.deletePublication(published.publicationId, published.managerToken);
+    assert.equal((await service.refreshMedia(token)).status, "not-found");
+
+    const expiring = await service.publish(await scrapbookContent(), operationKey("refresh-expired-publication"));
+    const expiringToken = new URL(expiring.shareUrl).pathname.split("/").pop();
+    setNow("2027-09-12T00:12:00.000Z");
+    assert.equal((await service.refreshMedia(expiringToken)).status, "closed");
+    assert.equal((await service.refreshMedia(deriveToken(secret, "wrong-public-token"))).status, "not-found");
+  });
+});
+
+test("media refresh refuses a stored media reference owned by another publication", async () => {
+  await withService(async ({ service, dataDir }) => {
+    const first = await service.publish(await scrapbookContent(), operationKey("refresh-owner-a"));
+    const second = await service.publish(await scrapbookContent(), operationKey("refresh-owner-b"));
+    const firstRecordPath = path.join(dataDir, "records", `${first.publicationId}.json`);
+    const secondRecordPath = path.join(dataDir, "records", `${second.publicationId}.json`);
+    const firstRecord = JSON.parse(await readFile(firstRecordPath, "utf8"));
+    const secondRecord = JSON.parse(await readFile(secondRecordPath, "utf8"));
+    firstRecord.content.memory.scrapbook.slots[0].mediaId = secondRecord.content.memory.scrapbook.slots[0].mediaId;
+    await service.store.atomicWrite(`records/${first.publicationId}.json`, JSON.stringify(firstRecord));
+
+    const firstToken = new URL(first.shareUrl).pathname.split("/").pop();
+    await assert.rejects(
+      service.refreshMedia(firstToken),
+      (error) => error instanceof PersistenceError && error.code === "unavailable",
+    );
+  });
+});
+
 test("rejects invalid, credentialed, and private-network gift URLs", () => {
   assert.throws(() => validateGiftUrl("http://gift.example.com"));
   assert.throws(() => validateGiftUrl("https://user:pass@gift.example.com/redeem"));
@@ -204,7 +313,15 @@ test("rejects invalid, credentialed, and private-network gift URLs", () => {
   assert.throws(() => validateGiftUrl("https://item.taobao.com.evil.example/item.htm?id=123456789"));
   assert.throws(() => validateGiftUrl("https://item.taobao.com/item.htm?id=123456789"));
   assert.throws(() => validateGiftUrl("https://item.jd.com/100012345678.html"));
+  assert.throws(() => validateGiftUrl("https://i.tb.cn/h.SafeGift123?tk=SafeToken123&tk=OtherToken456"));
+  assert.throws(() => validateGiftUrl("https://i.tb.cn/h.SafeGift123?tk=SafeToken123&from=share"));
+  assert.throws(() => validateGiftUrl(`https://trade.m.jd.com/present?id=${"A".repeat(24)}&from=share`));
+  assert.throws(() => validateGiftUrl(`https://trade.m.jd.com/present?id=${"A".repeat(24)}#gift`));
   assert.equal(validateGiftUrl("https://3.cn/-SafeGift123"), "https://3.cn/-SafeGift123");
+  assert.equal(
+    validateGiftUrl("https://I.TB.CN/h.SafeGift123?tk=SafeToken123"),
+    "https://i.tb.cn/h.SafeGift123?tk=SafeToken123",
+  );
   assert.equal(
     validateGiftUrl("【京东】https://3.cn/-SafeGift123 「送你一份礼物～」"),
     "https://3.cn/-SafeGift123",
@@ -232,6 +349,159 @@ test("permanently deletes content and media and prevents idempotent resurrection
     await assert.rejects(readFile(path.join(dataDir, "records", `${published.publicationId}.json`)));
     assert.equal((await service.getManaged(published.publicationId, published.managerToken)).status, "deleted");
     await assert.rejects(service.publish(content, operation, published.managerToken), (error) => error instanceof PersistenceError && error.code === "conflict");
+  });
+});
+
+test("interrupted permanent deletion stays private, reports pending cleanup, and safely retries every cleanup step", async (t) => {
+  const targets = [
+    { name: "image blob", matches: (relativePath) => relativePath.startsWith("blobs/") },
+    { name: "media record", matches: (relativePath) => relativePath.startsWith("media/") },
+    { name: "public index", matches: (relativePath) => relativePath.startsWith("public/") },
+    { name: "publication record", matches: (relativePath) => relativePath.startsWith("records/") },
+  ];
+
+  for (const target of targets) {
+    await t.test(target.name, async () => {
+      await withService(async ({ service, dataDir }) => {
+        const content = await scrapbookContent();
+        const operation = operationKey(`interrupted-delete-${target.name}`);
+        const published = await service.publish(content, operation);
+        const publicToken = new URL(published.shareUrl).pathname.split("/").pop();
+        const loaded = await service.load(publicToken);
+        assert.equal(loaded.status, "active");
+        const mediaUrl = new URL(loaded.surprise.memory.scrapbook.slots[0].imageUrl);
+        const mediaId = mediaUrl.pathname.split("/").pop();
+
+        const other = await service.publish(cardContent({ recipient: { displayName: "Other" } }), operationKey(`other-${target.name}`));
+        const otherPublicToken = new URL(other.shareUrl).pathname.split("/").pop();
+
+        await interruptDelete(service, published, target.matches);
+
+        assert.equal((await service.load(publicToken)).status, "not-found");
+        assert.equal((await service.refreshMedia(publicToken)).status, "not-found");
+        await assert.rejects(
+          service.media(mediaId, mediaUrl.searchParams.get("expires"), mediaUrl.searchParams.get("signature")),
+          (error) => error instanceof PersistenceError && error.code === "not-found",
+        );
+        assert.equal((await service.getManaged(published.publicationId, published.managerToken)).status, "deleting");
+        await assert.rejects(
+          service.deletePublication(published.publicationId, deriveToken(secret, "wrong-delete-manager")),
+          (error) => error instanceof PersistenceError && error.code === "forbidden",
+        );
+
+        const retried = await service.deletePublication(published.publicationId, published.managerToken);
+        assert.equal(retried.status, "deleted");
+        assert.equal((await service.getManaged(published.publicationId, published.managerToken)).status, "deleted");
+        await assert.rejects(readFile(path.join(dataDir, "records", `${published.publicationId}.json`)));
+        await assert.rejects(readFile(path.join(dataDir, "public", `${hashSecret(publicToken, service.config.shareTokenPepper)}.json`)));
+        assert.deepEqual(await readdir(path.join(dataDir, "blobs")), []);
+        assert.deepEqual(await readdir(path.join(dataDir, "media")), []);
+        assert.equal(JSON.parse(await readFile(path.join(dataDir, "tombstones", `${published.publicationId}.json`), "utf8")).status, "deleted");
+        await assert.rejects(
+          service.publish(content, operation, published.managerToken),
+          (error) => error instanceof PersistenceError && error.code === "conflict",
+        );
+
+        assert.equal((await service.load(otherPublicToken)).status, "active");
+        await service.revoke(other.publicationId, other.managerToken);
+        assert.equal((await service.load(otherPublicToken)).status, "closed");
+      });
+    });
+  }
+});
+
+test("permanent deletion proves missing media files absent and stops on unreadable or foreign media records", async (t) => {
+  await t.test("missing media record", async () => {
+    await withService(async ({ service, dataDir }) => {
+      const published = await service.publish(await scrapbookContent(), operationKey("missing-media-record"));
+      const publicToken = new URL(published.shareUrl).pathname.split("/").pop();
+      const loaded = await service.load(publicToken);
+      const mediaId = new URL(loaded.surprise.memory.scrapbook.slots[0].imageUrl).pathname.split("/").pop();
+      await service.store.remove(`media/${mediaId}.json`);
+
+      assert.equal((await readdir(path.join(dataDir, "blobs"))).length, 1);
+      assert.equal((await service.deletePublication(published.publicationId, published.managerToken)).status, "deleted");
+      assert.deepEqual(await readdir(path.join(dataDir, "blobs")), []);
+      await assert.rejects(readFile(path.join(dataDir, "records", `${published.publicationId}.json`)));
+    });
+  });
+
+  for (const corruption of ["unreadable", "foreign"] ) {
+    await t.test(`${corruption} media record`, async () => {
+      await withService(async ({ service, dataDir }) => {
+        const published = await service.publish(await scrapbookContent(), operationKey(`${corruption}-media-record`));
+        const publicToken = new URL(published.shareUrl).pathname.split("/").pop();
+        const loaded = await service.load(publicToken);
+        const mediaId = new URL(loaded.surprise.memory.scrapbook.slots[0].imageUrl).pathname.split("/").pop();
+        const mediaPath = `media/${mediaId}.json`;
+        const original = await readFile(path.join(dataDir, mediaPath), "utf8");
+        const replacement = corruption === "unreadable"
+          ? "{not-json"
+          : JSON.stringify({ ...JSON.parse(original), publicationId: "f".repeat(32) });
+        await service.store.atomicWrite(mediaPath, replacement);
+
+        await assert.rejects(service.deletePublication(published.publicationId, published.managerToken));
+        assert.equal((await service.getManaged(published.publicationId, published.managerToken)).status, "deleting");
+        assert.equal((await service.load(publicToken)).status, "not-found");
+        assert.equal((await readdir(path.join(dataDir, "blobs"))).length, 1);
+        assert.equal((await readdir(path.join(dataDir, "records"))).length, 1);
+
+        await service.store.atomicWrite(mediaPath, original);
+        assert.equal((await service.deletePublication(published.publicationId, published.managerToken)).status, "deleted");
+        assert.deepEqual(await readdir(path.join(dataDir, "blobs")), []);
+        assert.deepEqual(await readdir(path.join(dataDir, "media")), []);
+      });
+    });
+  }
+});
+
+test("maintenance retries tombstoned cleanup, isolates failures, and logs only safe diagnostics", async () => {
+  await withService(async ({ service }) => {
+    const content = await scrapbookContent();
+    const targets = [
+      { name: "blob", matches: (relativePath) => relativePath.startsWith("blobs/") },
+      { name: "media", matches: (relativePath) => relativePath.startsWith("media/") },
+      { name: "public", matches: (relativePath) => relativePath.startsWith("public/") },
+      { name: "record", matches: (relativePath) => relativePath.startsWith("records/") },
+    ];
+    const interrupted = [];
+    for (const target of targets) {
+      const published = await service.publish(content, operationKey(`maintenance-incomplete-${target.name}`));
+      await interruptDelete(service, published, target.matches);
+      interrupted.push(published);
+    }
+    const [first, ...others] = interrupted;
+
+    const remove = service.store.remove.bind(service.store);
+    service.store.remove = async (relativePath) => {
+      if (relativePath === `records/${first.publicationId}.json`) {
+        throw new Error("Injected maintenance failure with no private data");
+      }
+      return remove(relativePath);
+    };
+    const logs = [];
+    const originalError = console.error;
+    console.error = (...args) => logs.push(args);
+    try {
+      assert.equal(await service.cleanupExpired(), 3);
+    } finally {
+      console.error = originalError;
+      service.store.remove = remove;
+    }
+
+    assert.equal((await service.getManaged(first.publicationId, first.managerToken)).status, "deleting");
+    for (const completed of others) {
+      assert.equal((await service.getManaged(completed.publicationId, completed.managerToken)).status, "deleted");
+    }
+    assert.equal(logs.length, 1);
+    const diagnostic = JSON.stringify(logs[0]);
+    assert.match(diagnostic, new RegExp(first.publicationId));
+    assert.doesNotMatch(diagnostic, new RegExp(first.managerToken));
+    assert.doesNotMatch(diagnostic, /虚构测试照片/);
+    assert.doesNotMatch(diagnostic, /Injected maintenance failure with no private data/);
+
+    assert.equal(await service.cleanupExpired(), 1);
+    assert.equal((await service.getManaged(first.publicationId, first.managerToken)).status, "deleted");
   });
 });
 

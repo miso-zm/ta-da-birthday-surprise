@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import type { GiftContent, PortraitPosterContent } from "@/lib/surprise-contract";
 import { getPublicGiftLink } from "@/lib/gift-link-policy";
 import styles from "./share.module.css";
@@ -11,22 +12,57 @@ type ShareProps = {
   portrait?: PortraitPosterContent;
   onReplay: () => void;
   onExitPreview?: () => void;
+  onMediaError?: () => void;
+  onMediaLoad?: () => void;
+  onRetryMedia?: () => Promise<boolean>;
+  mediaRefreshing?: boolean;
+  mediaRecoveryError?: string;
 };
 
-export function Share({ recipientName, gift, portrait, onReplay, onExitPreview }: ShareProps) {
+export function Share({
+  recipientName,
+  gift,
+  portrait,
+  onReplay,
+  onExitPreview,
+  onMediaError,
+  onMediaLoad,
+  onRetryMedia,
+  mediaRefreshing = false,
+  mediaRecoveryError,
+}: ShareProps) {
   const giftLink = gift.kind === "link" ? getPublicGiftLink(gift.externalUrl) : null;
+  const [failedPortraitUrl, setFailedPortraitUrl] = useState<string>();
+  const portraitFailed = Boolean(portrait && failedPortraitUrl === portrait.imageUrl);
   return (
     <section className={styles.ending} aria-labelledby="birthday-ending-title">
-      {portrait ? (
+      {portrait && !portraitFailed ? (
         <div className={styles.portraitPoster}>
           <Image
+            key={portrait.imageUrl}
             src={portrait.imageUrl}
             alt={`${recipientName} 的生日主角海报`}
             width={720}
             height={720}
             unoptimized
             className={styles.portraitPosterImage}
+            onLoad={onMediaLoad}
+            onError={() => {
+              setFailedPortraitUrl(portrait.imageUrl);
+              onMediaError?.();
+            }}
           />
+        </div>
+      ) : portrait ? (
+        <div className={styles.portraitRecovery} role="status" aria-live="polite">
+          <p>{mediaRecoveryError ?? "主角海报暂时没能打开。"}</p>
+          <button
+            type="button"
+            disabled={mediaRefreshing}
+            onClick={async () => {
+              if (!onRetryMedia || await onRetryMedia()) setFailedPortraitUrl(undefined);
+            }}
+          >{mediaRefreshing ? "正在恢复…" : "重新加载海报"}</button>
         </div>
       ) : (
         <div className={styles.illustration}>

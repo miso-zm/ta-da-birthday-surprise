@@ -86,6 +86,11 @@ export class PublicationService {
     return `media/${id}.json`;
   }
 
+  private expectedMediaFilename(mediaId: string, mimeType: MediaRecord["mimeType"]) {
+    const extension = mimeType === "image/jpeg" ? "jpg" : mimeType === "image/png" ? "png" : "webp";
+    return `${mediaId}.${extension}`;
+  }
+
   private async readRecord(id: string): Promise<PublicationRecord | null> {
     if (!ID_PATTERN.test(id)) return null;
     const value = await this.store.readJson<PublicationRecord>(this.recordPath(id));
@@ -112,6 +117,32 @@ export class PublicationService {
     return `${this.config.appOrigin}/api/media/${mediaId}?expires=${expires}&signature=${signature}`;
   }
 
+  private mediaIdsForRecord(record: PublicationRecord): string[] {
+    const mediaIds = record.content.memory.kind === "scrapbook"
+      ? record.content.memory.scrapbook.slots.map((slot) => slot.mediaId)
+      : [];
+    if (record.content.portrait) mediaIds.push(record.content.portrait.mediaId);
+    return mediaIds;
+  }
+
+  private async assertOwnedMedia(record: PublicationRecord): Promise<void> {
+    for (const mediaId of this.mediaIdsForRecord(record)) {
+      if (!MEDIA_ID_PATTERN.test(mediaId)) {
+        throw new PersistenceError("unavailable", "Stored media reference is invalid.");
+      }
+      const media = await this.store.readJson<MediaRecord>(this.mediaRecordPath(mediaId));
+      if (
+        !media
+        || media.schemaVersion !== PUBLICATION_SCHEMA_VERSION
+        || media.id !== mediaId
+        || media.publicationId !== record.id
+        || media.filename !== this.expectedMediaFilename(mediaId, media.mimeType)
+      ) {
+        throw new PersistenceError("unavailable", "Stored media record does not match the publication.");
+      }
+    }
+  }
+
   private async purgeRecord(record: PublicationRecord, deletedAt = this.clock().toISOString()) {
     const tombstone: DeletedPublicationRecord = {
       schemaVersion: PUBLICATION_SCHEMA_VERSION,
@@ -124,32 +155,92 @@ export class PublicationService {
       deletedAt,
     };
     await this.store.atomicWrite(this.tombstonePath(record.id), JSON.stringify(tombstone));
-    const mediaIds = record.content.memory.kind === "scrapbook"
-      ? record.content.memory.scrapbook.slots.map((slot) => slot.mediaId)
-      : [];
-    if (record.content.portrait) mediaIds.push(record.content.portrait.mediaId);
-    for (const mediaId of mediaIds) {
-      const media = await this.store.readJson<MediaRecord>(this.mediaRecordPath(mediaId));
-      if (media?.publicationId === record.id) {
-        await this.store.remove(this.mediaPath(media.filename));
-        await this.store.remove(this.mediaRecordPath(mediaId));
+    for (const mediaId of this.mediaIdsForRecord(record)) {
+      if (!MEDIA_ID_PATTERN.test(mediaId)) {
+        throw new PersistenceError("unavailable", "Stored media reference is invalid.");
       }
+      const media = await this.store.readJson<MediaRecord>(this.mediaRecordPath(mediaId));
+      if (!media) {
+        for (const extension of ["jpg", "png", "webp"]) {
+          await this.store.remove(this.mediaPath(`${mediaId}.${extension}`));
+        }
+        continue;
+      }
+      if (
+        media.schemaVersion !== PUBLICATION_SCHEMA_VERSION
+        || media.id !== mediaId
+        || media.publicationId !== record.id
+        || media.filename !== this.expectedMediaFilename(mediaId, media.mimeType)
+      ) {
+        throw new PersistenceError("unavailable", "Stored media record does not match the publication.");
+      }
+      await this.store.remove(this.mediaPath(media.filename));
+      await this.store.remove(this.mediaRecordPath(mediaId));
     }
     await this.store.remove(this.publicPath(record.publicTokenHash));
     await this.store.remove(this.recordPath(record.id));
+  }
+
+  private recordMatchesTombstone(record: PublicationRecord, tombstone: DeletedPublicationRecord) {
+    return record.id === tombstone.id
+      && safeEqual(record.managerHash, tombstone.managerHash)
+      && safeEqual(record.payloadHash, tombstone.payloadHash);
+  }
+
+  private reportCleanupFailure(
+    publicationId: string,
+    source: "tombstone" | "expiry",
+    error: unknown,
+  ) {
+    console.error("[Ta-da persistence] Publication cleanup failed.", {
+      publicationId,
+      source,
+      reason: error instanceof PersistenceError
+        ? error.code
+        : error instanceof Error
+          ? error.name
+          : "unknown",
+    });
   }
 
   async cleanupExpired(): Promise<number> {
     return this.store.serialize(async () => {
       const now = this.clock().getTime();
       let purged = 0;
+      const tombstonedIds = new Set<string>();
+
+      for (const filename of await this.store.list("tombstones")) {
+        const match = filename.match(/^([a-f0-9]{32})\.json$/);
+        if (!match) continue;
+        const publicationId = match[1];
+        tombstonedIds.add(publicationId);
+        try {
+          const tombstone = await this.readTombstone(publicationId);
+          const record = await this.readRecord(publicationId);
+          if (!tombstone || !record) continue;
+          if (!this.recordMatchesTombstone(record, tombstone)) {
+            throw new PersistenceError("unavailable", "Stored deletion record does not match the publication.");
+          }
+          await this.purgeRecord(record, tombstone.deletedAt);
+          purged += 1;
+        } catch (error) {
+          this.reportCleanupFailure(publicationId, "tombstone", error);
+        }
+      }
+
       for (const filename of await this.store.list("records")) {
         const match = filename.match(/^([a-f0-9]{32})\.json$/);
         if (!match) continue;
-        const record = await this.readRecord(match[1]);
-        if (!record || new Date(record.expiresAt).getTime() > now) continue;
-        await this.purgeRecord(record);
-        purged += 1;
+        const publicationId = match[1];
+        if (tombstonedIds.has(publicationId)) continue;
+        try {
+          const record = await this.readRecord(publicationId);
+          if (!record || new Date(record.expiresAt).getTime() > now) continue;
+          await this.purgeRecord(record);
+          purged += 1;
+        } catch (error) {
+          this.reportCleanupFailure(publicationId, "expiry", error);
+        }
       }
       return purged;
     });
@@ -356,6 +447,7 @@ export class PublicationService {
     if (await this.readTombstone(index.publicationId)) return { status: "not-found" };
     if (!record || !safeEqual(record.publicTokenHash, tokenHash)) return { status: "not-found" };
     if (activeStatus(record, this.clock()) === "closed") return { status: "closed" };
+    await this.assertOwnedMedia(record);
 
     const { portrait: storedPortrait, ...storedWithoutPortrait } = record.content;
     let content: SurpriseContent;
@@ -389,20 +481,27 @@ export class PublicationService {
     };
   }
 
+  async refreshMedia(publicToken: string): Promise<LoadedPublication> {
+    return this.load(publicToken);
+  }
+
   async getManaged(publicationId: string, managerToken?: string): Promise<ManagedPublication | null> {
     if (!validManagerToken(managerToken)) return null;
-    const record = await this.readRecord(publicationId);
     const managerHash = hashSecret(managerToken, this.config.shareTokenPepper);
-    if (!record) {
-      const tombstone = await this.readTombstone(publicationId);
-      if (!tombstone || !safeEqual(tombstone.managerHash, managerHash)) return null;
+    const tombstone = await this.readTombstone(publicationId);
+    if (tombstone) {
+      if (!safeEqual(tombstone.managerHash, managerHash)) return null;
+      const remainingRecord = await this.readRecord(publicationId);
+      if (remainingRecord && !this.recordMatchesTombstone(remainingRecord, tombstone)) return null;
       return {
         id: tombstone.id,
-        status: "deleted",
+        status: remainingRecord ? "deleting" : "deleted",
         createdAt: tombstone.createdAt,
         expiresAt: tombstone.expiresAt,
       };
     }
+    const record = await this.readRecord(publicationId);
+    if (!record) return null;
     if (!safeEqual(record.managerHash, managerHash)) return null;
     const expired = record.status === "active" && new Date(record.expiresAt).getTime() <= this.clock().getTime();
     return {
@@ -448,6 +547,13 @@ export class PublicationService {
       if (existingTombstone) {
         if (!safeEqual(existingTombstone.managerHash, managerHash)) {
           throw new PersistenceError("forbidden", "Publication cannot be managed from this session.");
+        }
+        const remainingRecord = await this.readRecord(publicationId);
+        if (remainingRecord) {
+          if (!this.recordMatchesTombstone(remainingRecord, existingTombstone)) {
+            throw new PersistenceError("unavailable", "Stored deletion record does not match the publication.");
+          }
+          await this.purgeRecord(remainingRecord, existingTombstone.deletedAt);
         }
         return {
           id: existingTombstone.id,

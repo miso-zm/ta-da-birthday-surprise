@@ -30,7 +30,7 @@ function errorResponse(error: unknown) {
     const status = error.code === "forbidden" ? 403
       : error.code === "conflict" ? 409
       : error.code === "payload-too-large" ? 413
-      : error.code === "rate-limited" ? 429
+      : error.code === "rate-limited" || error.code === "daily-rate-limited" ? 429
       : error.code === "storage-exhausted" ? 507
       : 400;
     return NextResponse.json(
@@ -38,7 +38,7 @@ function errorResponse(error: unknown) {
       { status, headers: {
         "Cache-Control": "no-store",
         "X-Robots-Tag": "noindex, nofollow",
-        ...(status === 429 ? { "Retry-After": "60" } : {}),
+        ...(status === 429 ? { "Retry-After": error.code === "daily-rate-limited" ? "86400" : "60" } : {}),
       } },
     );
   }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       throw new PersistenceError("bad-request", "发布内容必须使用 JSON 格式。");
     }
     assertPublishRate(request);
-    release = await acquirePublishSlot();
+    release = await acquirePublishSlot({ signal: request.signal });
     const declaredLength = Number(request.headers.get("content-length") ?? 0);
     if (declaredLength > MAX_REQUEST_BYTES) {
       throw new PersistenceError("payload-too-large", "照片总大小过大，请压缩后重试。");

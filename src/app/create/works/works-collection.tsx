@@ -86,7 +86,7 @@ export function WorksCollection() {
     </section> : <section role="tabpanel" id="published-panel" aria-labelledby="published-tab">
       {!loading && !error && !works.length ? <div className={styles.empty}><h2>还没有可管理的作品</h2><p>从这个浏览器发布后，就会在这里留下入口。</p><a className={styles.action} href="/create">准备一份生日快乐</a></div> : null}
       {works.map((work) => <article className={styles.workCard} data-status={work.status} key={work.publicationId}>
-        <div className={styles.workTop}><WorkCover kind={work.memoryKind} label={work.status === "active" ? "已发布" : work.status === "expired" ? "已到期" : "已收回"} /><div className={styles.workCopy}><h2>给 {work.recipientName || "朋友"} 的生日{work.memoryKind === "scrapbook" ? "手帐" : "贺卡"}</h2>
+        <div className={styles.workTop}><WorkCover kind={work.memoryKind} label={work.status === "active" ? "已发布" : work.status === "expired" ? "已到期" : work.status === "deleting" ? "清理中" : work.status === "deleted" ? "已删除" : "已收回"} /><div className={styles.workCopy}><h2>给 {work.recipientName || "朋友"} 的生日{work.memoryKind === "scrapbook" ? "手帐" : "贺卡"}</h2>
         <p>{work.status === "active" ? `有效期至 ${new Date(work.expiresAt).toLocaleDateString("zh-CN")}` : "旧链接已无法查看"}</p></div></div>
         <div className={styles.workActions}>{work.status === "active" ? <><button type="button" onClick={() => void copy(work)}>复制链接</button><a href={work.shareUrl} target="_blank" rel="noopener noreferrer">查看效果</a></> : null}<a href={work.manageUrl}>管理作品</a></div>
       </article>)}

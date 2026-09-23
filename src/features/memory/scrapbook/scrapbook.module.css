@@ -158,6 +158,11 @@
   transform: translateY(1px);
 }
 
+.photoNotice button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 @media (max-width: 374px) {
   .photoNotice {
     grid-template-columns: 1fr;

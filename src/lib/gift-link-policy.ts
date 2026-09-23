@@ -29,6 +29,17 @@ function normalizedHost(url: URL) {
   return url.hostname.toLowerCase().replace(/\.$/, "");
 }
 
+function hasOnlyOneParameter(url: URL, name: string) {
+  const keys = [...url.searchParams.keys()];
+  return keys.length === 1 && keys[0] === name && url.searchParams.getAll(name).length === 1;
+}
+
+function canonicalGiftUrl(domain: string, path: string, parameter?: { name: string; value: string }) {
+  const canonical = new URL(`https://${domain}${path}`);
+  if (parameter) canonical.searchParams.set(parameter.name, parameter.value);
+  return canonical.toString();
+}
+
 function jdGiftId(value: string | null) {
   return Boolean(value && value.length >= 20 && value.length <= 512 && /^[A-Za-z0-9+/=]+$/.test(value));
 }
@@ -39,21 +50,32 @@ export function checkGiftLink(rawUrl: string): GiftLinkCheck {
 
   const domain = normalizedHost(url);
   const path = url.pathname.replace(/\/{2,}/g, "/");
+  const hasCanonicalPath = path === url.pathname;
+  const taobaoToken = url.searchParams.get("tk") ?? "";
 
   if (
     domain === "i.tb.cn"
+    && hasCanonicalPath
     && /^\/h\.[A-Za-z0-9_-]{4,64}$/.test(path)
-    && /^[A-Za-z0-9]{8,32}$/.test(url.searchParams.get("tk") ?? "")
-    && [...url.searchParams.keys()].every((key) => key === "tk")
+    && /^[A-Za-z0-9]{8,32}$/.test(taobaoToken)
+    && hasOnlyOneParameter(url, "tk")
     && !url.hash
   ) {
-    return { status: "supported", link: { id: "taobao", name: "淘宝", domain, url: url.toString(), kind: "gift" } };
+    return { status: "supported", link: { id: "taobao", name: "淘宝", domain, url: canonicalGiftUrl(domain, path, { name: "tk", value: taobaoToken }), kind: "gift" } };
   }
-  if (domain === "trade.m.jd.com" && path === "/present" && jdGiftId(url.searchParams.get("id"))) {
-    return { status: "supported", link: { id: "jd", name: "京东", domain, url: url.toString(), kind: "gift" } };
+  const jdId = url.searchParams.get("id");
+  if (
+    domain === "trade.m.jd.com"
+    && hasCanonicalPath
+    && path === "/present"
+    && jdGiftId(jdId)
+    && hasOnlyOneParameter(url, "id")
+    && !url.hash
+  ) {
+    return { status: "supported", link: { id: "jd", name: "京东", domain, url: canonicalGiftUrl(domain, path, { name: "id", value: jdId ?? "" }), kind: "gift" } };
   }
-  if (domain === "3.cn" && /^\/-[A-Za-z0-9_-]{4,64}$/.test(path) && !url.search && !url.hash) {
-    return { status: "supported", link: { id: "jd", name: "京东", domain, url: url.toString(), kind: "gift" } };
+  if (domain === "3.cn" && hasCanonicalPath && /^\/-[A-Za-z0-9_-]{4,64}$/.test(path) && !url.search && !url.hash) {
+    return { status: "supported", link: { id: "jd", name: "京东", domain, url: canonicalGiftUrl(domain, path), kind: "gift" } };
   }
 
   const knownPlatform = domain === "taobao.com" || domain.endsWith(".taobao.com")

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import type { CardContent, Person } from "@/lib/surprise-contract";
 import { PrimaryButton, StageCard } from "@/features/shared/placeholders";
 import letterCardArtwork from "./assets/letter-card-background.png";
@@ -12,6 +11,7 @@ import {
   resolveCardTemplate,
   type MessageDensity,
 } from "./birthday-card-logic";
+import { LetterCardContent } from "./letter-card-content";
 import styles from "./birthday-card.module.css";
 
 type BirthdayCardProps = {
@@ -39,49 +39,18 @@ function LetterCard({ recipientName, signature, message }: Omit<CardTemplateProp
   const density = getMessageDensity(message);
   const recipientIsCompact = needsCompactName(recipientName);
   const signatureIsCompact = needsCompactName(signature);
-  const [isFontReady, setIsFontReady] = useState(false);
-  const fontSample = `给 ${recipientName}${message}${signature}`;
   const regionClass = density === "short"
     ? styles.messageRegionShort
     : density === "medium"
       ? styles.messageRegionMedium
-      : density === "maximum"
-        ? styles.messageRegionMaximum
-        : "";
-
-  useEffect(() => {
-    let isActive = true;
-
-    if (!document.fonts) {
-      Promise.resolve().then(() => {
-        if (isActive) setIsFontReady(true);
-      });
-      return () => {
-        isActive = false;
-      };
-    }
-
-    document.fonts.load('300 16px "NaikaiCard"', fontSample).then(
-      () => {
-        if (isActive) setIsFontReady(true);
-      },
-      () => {
-        if (isActive) setIsFontReady(true);
-      },
-    );
-
-    return () => {
-      isActive = false;
-    };
-  }, [fontSample]);
-
-  const pendingClass = isFontReady ? "" : styles.handwritingPending;
+      : density === "long"
+        ? styles.messageRegionLong
+        : styles.messageRegionMaximum;
 
   return (
     <article
       className={styles.letterCard}
       aria-label={`给 ${recipientName} 的手写生日信`}
-      aria-busy={!isFontReady}
     >
       <Image
         src={letterCardArtwork}
@@ -93,17 +62,15 @@ function LetterCard({ recipientName, signature, message }: Omit<CardTemplateProp
         draggable={false}
         priority
       />
-      <p className={`${styles.handwriting} ${pendingClass} ${styles.recipient} ${recipientIsCompact ? styles.recipientCompact : ""}`}>
-        给 {recipientName}
-      </p>
-      <div className={`${styles.messageRegion} ${regionClass}`}>
-        <p className={`${styles.handwriting} ${pendingClass} ${styles.message} ${getMessageClass(density)}`}>
-          {message}
-        </p>
-      </div>
-      <p className={`${styles.handwriting} ${pendingClass} ${styles.signature} ${signatureIsCompact ? styles.signatureCompact : ""} ${density === "maximum" ? styles.signatureMaximum : ""}`}>
-        {signature}
-      </p>
+      <LetterCardContent
+        recipientName={recipientName}
+        message={message}
+        signature={signature}
+        recipientClassName={`${styles.handwriting} ${styles.recipient} ${recipientIsCompact ? styles.recipientCompact : ""}`}
+        messageRegionClassName={`${styles.messageRegion} ${regionClass}`}
+        messageClassName={`${styles.handwriting} ${styles.message} ${getMessageClass(density)}`}
+        signatureClassName={`${styles.handwriting} ${styles.signature} ${signatureIsCompact ? styles.signatureCompact : ""} ${density === "long" ? styles.signatureLong : ""} ${density === "maximum" ? styles.signatureMaximum : ""}`}
+      />
     </article>
   );
 }
@@ -128,17 +95,15 @@ function CreamWishesCard({ recipientName, signature, message }: Omit<CardTemplat
         draggable={false}
         priority
       />
-      <p className={`${styles.handwriting} ${styles.creamRecipient} ${recipientIsCompact ? styles.creamRecipientCompact : ""}`}>
-        给 {recipientName}
-      </p>
-      <div className={`${styles.creamMessageRegion} ${density === "maximum" ? styles.creamMessageRegionMaximum : ""}`}>
-        <p className={`${styles.handwriting} ${styles.creamMessage} ${getMessageClass(density)}`}>
-          {message}
-        </p>
-      </div>
-      <p className={`${styles.handwriting} ${styles.creamSignature} ${signatureIsCompact ? styles.creamSignatureCompact : ""} ${density === "maximum" ? styles.creamSignatureMaximum : ""}`}>
-        {signature}
-      </p>
+      <LetterCardContent
+        recipientName={recipientName}
+        message={message}
+        signature={signature}
+        recipientClassName={`${styles.handwriting} ${styles.creamRecipient} ${recipientIsCompact ? styles.creamRecipientCompact : ""}`}
+        messageRegionClassName={`${styles.creamMessageRegion} ${density === "long" ? styles.creamMessageRegionLong : ""} ${density === "maximum" ? styles.creamMessageRegionMaximum : ""}`}
+        messageClassName={`${styles.handwriting} ${styles.creamMessage} ${getMessageClass(density)}`}
+        signatureClassName={`${styles.handwriting} ${styles.creamSignature} ${signatureIsCompact ? styles.creamSignatureCompact : ""} ${density === "long" ? styles.creamSignatureLong : ""} ${density === "maximum" ? styles.creamSignatureMaximum : ""}`}
+      />
     </article>
   );
 }

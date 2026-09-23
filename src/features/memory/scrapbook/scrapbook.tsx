@@ -42,6 +42,11 @@ import styles from "./scrapbook.module.css";
 type ScrapbookProps = {
   scrapbook: ScrapbookContent;
   onContinue: () => void;
+  onMediaError?: () => void;
+  onMediaLoad?: () => void;
+  onRetryMedia?: () => Promise<boolean>;
+  mediaRefreshing?: boolean;
+  mediaRecoveryError?: string;
 };
 
 type SlotGeometry = {
@@ -132,7 +137,15 @@ function photoStyle(slot: ScrapbookSlot | undefined, geometry: SlotGeometry): CS
   };
 }
 
-export function Scrapbook({ scrapbook, onContinue }: ScrapbookProps) {
+export function Scrapbook({
+  scrapbook,
+  onContinue,
+  onMediaError,
+  onMediaLoad,
+  onRetryMedia,
+  mediaRefreshing = false,
+  mediaRecoveryError,
+}: ScrapbookProps) {
   const template = TEMPLATE_CONFIG[scrapbook.templateId];
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
 
@@ -172,8 +185,12 @@ export function Scrapbook({ scrapbook, onContinue }: ScrapbookProps) {
                   draggable={false}
                   style={photoStyle(hasPhoto ? slot : undefined, geometry)}
                   onError={hasPhoto && slot
-                    ? () => setFailedImages((current) => new Set(current).add(getImageFailureKey(slot)))
+                    ? () => {
+                        setFailedImages((current) => new Set(current).add(getImageFailureKey(slot)));
+                        onMediaError?.();
+                      }
                     : undefined}
+                  onLoad={hasPhoto ? onMediaLoad : undefined}
                 />
               </div>
             );
@@ -201,10 +218,14 @@ export function Scrapbook({ scrapbook, onContinue }: ScrapbookProps) {
 
       {failedSlots.length > 0 ? (
         <div className={styles.photoNotice} role="status" aria-live="polite">
-          <p>
-            第 {failedSlots.map((index) => index + 1).join("、")} 张照片暂时没能打开，其他回忆都还在。
-          </p>
-          <button type="button" onClick={() => setFailedImages(new Set())}>重新加载照片</button>
+          <p>{mediaRecoveryError ?? `第 ${failedSlots.map((index) => index + 1).join("、")} 张照片暂时没能打开，其他回忆都还在。`}</p>
+          <button
+            type="button"
+            disabled={mediaRefreshing}
+            onClick={async () => {
+              if (!onRetryMedia || await onRetryMedia()) setFailedImages(new Set());
+            }}
+          >{mediaRefreshing ? "正在恢复…" : "重新加载照片"}</button>
         </div>
       ) : (
         <p className={styles.helperText}>每一张照片，都保留了送出时选好的取景。</p>
