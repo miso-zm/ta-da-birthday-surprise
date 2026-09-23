@@ -37,6 +37,21 @@ body::before {
   background-size: 17px 19px, 23px 29px;
 }
 
+.site-filing-footer {
+  position: relative;
+  z-index: 1;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.site-filing-footer a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
 h1,
 h2,
 h3,
