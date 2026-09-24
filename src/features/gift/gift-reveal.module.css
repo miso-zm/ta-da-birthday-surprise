@@ -25,58 +25,6 @@
   isolation: isolate;
 }
 
-.confettiBurst {
-  position: fixed;
-  z-index: 2;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.confettiPiece {
-  position: absolute;
-  top: 0;
-  left: var(--confetti-left);
-  width: var(--confetti-width);
-  height: var(--confetti-height);
-  border-radius: 3px;
-  background: currentColor;
-  color: var(--confetti-color);
-  opacity: 0;
-  transform-origin: center;
-  animation: gift-confetti-fall var(--confetti-duration) linear var(--confetti-delay) both;
-}
-
-.confettiPiece[data-shape="dot"] {
-  border-radius: 50%;
-}
-
-.confettiPiece[data-shape="star"] {
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 56%, 79% 94%, 50% 72%, 21% 94%, 32% 56%, 2% 35%, 39% 35%);
-}
-
-@keyframes gift-confetti-fall {
-  0% {
-    opacity: 0;
-    transform: translate3d(-50%, var(--confetti-start-y), 0) rotate(0deg) scale(0.86);
-  }
-
-  18% {
-    opacity: 1;
-    transform: translate3d(-50%, calc(var(--confetti-start-y) + 9vh), 0) rotate(0deg) scale(0.94);
-  }
-
-  52% {
-    opacity: 0.96;
-    transform: translate3d(calc(-50% + var(--confetti-mid-x)), var(--confetti-mid-y), 0) rotate(var(--confetti-mid-turn)) scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(calc(-50% + var(--confetti-end-x)), var(--confetti-end-y), 0) rotate(var(--confetti-end-turn)) scale(0.94);
-  }
-}
-
 .title {
   width: min(85vw, 21rem);
   max-width: 100%;
@@ -231,10 +179,6 @@ a.platformCard:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .confettiBurst {
-    display: none;
-  }
-
   .platformCard {
     transition: none;
   }

@@ -22,7 +22,7 @@
 
 .welcomeFrame {
   position: relative;
-  width: min(100vw, calc(100dvh * 0.46258), 430px);
+  width: min(100vw, 430px);
   height: 100dvh;
   overflow: hidden;
   isolation: isolate;
@@ -238,6 +238,22 @@
   gap: 20px;
 }
 
+.scrapbookEditorScroll {
+  padding-block: 16px 12px;
+}
+
+.scrapbookEditorIntro {
+  margin-bottom: 12px;
+}
+
+.scrapbookEditorIntro h1 {
+  font-size: 30px;
+}
+
+.scrapbookEditorForm {
+  gap: 12px;
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -319,6 +335,19 @@
 .choiceGrid {
   display: grid;
   gap: 10px;
+}
+
+.memoryChoiceGrid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.memoryChoiceGrid .choiceCard {
+  min-height: 66px;
+  padding: 10px 12px;
+}
+
+.memoryChoiceGrid .choiceCard small {
+  display: none;
 }
 
 .choiceCard {
@@ -1393,14 +1422,13 @@
 /* D-040 / D-042: Step 3 scrapbook editor */
 .layoutSummary {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 9px 10px;
   border: 1px solid var(--ui-line);
   border-radius: var(--radius-md);
   background: var(--paper);
-  box-shadow: var(--shadow-card);
 }
 
 .layoutSummary h2,
@@ -1455,13 +1483,13 @@
 }
 
 .summaryAction {
-  padding: 0 10px;
+  padding: 0 12px;
   color: var(--coral-dark);
 }
 
 .templateThumb {
   position: relative;
-  width: 58px;
+  width: 48px;
   aspect-ratio: 3 / 4;
   display: block;
   overflow: hidden;
@@ -1484,33 +1512,7 @@
 .previewSection,
 .scrapbookNote {
   display: grid;
-  gap: 12px;
-}
-
-.sectionHeading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.missingCount,
-.completeCount {
-  flex: 0 0 auto;
-  padding: 5px 9px;
-  border-radius: var(--radius-round);
-  font-size: 11px;
-  font-weight: var(--font-weight-medium);
-}
-
-.missingCount {
-  background: color-mix(in srgb, var(--butter) 32%, var(--paper));
-  color: var(--ink);
-}
-
-.completeCount {
-  background: color-mix(in srgb, var(--sage) 24%, var(--paper));
-  color: var(--ink);
+  gap: 8px;
 }
 
 .photoSelectButton {
@@ -1711,6 +1713,14 @@
   color: var(--muted);
   font-size: 11px;
   font-weight: var(--font-weight-medium);
+}
+
+.scrapbookEditorShell .footer {
+  padding-top: 10px;
+}
+
+.scrapbookEditorShell .primaryButton {
+  min-height: 54px;
 }
 
 .sheetBackdrop {

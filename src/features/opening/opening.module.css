@@ -10,7 +10,7 @@
 
 .frame {
   position: relative;
-  width: min(100vw, calc(100dvh * 0.46258), 430px);
+  width: min(100vw, 430px);
   height: 100dvh;
   overflow: hidden;
   isolation: isolate;

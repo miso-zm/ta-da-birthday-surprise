@@ -48,6 +48,10 @@ import { TadaCompanion } from "../../components/tada-companion/tada-companion";
 import { PrimaryActionDecoration } from "../../components/primary-action-decoration/primary-action-decoration";
 import { PortraitEditor } from "./portrait-editor";
 import { countDiscardedScrapbookPhotos } from "./scrapbook-template-change";
+import {
+  type SenderMemoryScreen,
+  usesMemoryComposerLayout,
+} from "./sender-layout-state";
 
 import placeholderPaper from "./assets/d044/photo-slot-placeholder-paper.webp";
 import oneBackground from "./assets/d044/one/background.webp";
@@ -84,7 +88,7 @@ const STEP_META: Record<SenderStep, { title: string; intro: string }> = {
   },
   memory: {
     title: "贺卡还是一页手帐？",
-    intro: "选一种方式，把想说的话和回忆留下来。",
+    intro: "",
   },
   gift: {
     title: "还要准备一份小礼物吗？",
@@ -178,7 +182,7 @@ const GIFT_TARGETS: Array<{
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 
 type SaveState = "idle" | "saving" | "saved" | "error";
-type MemoryScreen = "choice" | "scrapbook" | "portrait";
+type MemoryScreen = SenderMemoryScreen;
 
 type CropDraft = {
   index: number;
@@ -744,7 +748,7 @@ export function SenderBuilder({
       setGiftInput(initialDraft.gift.externalUrl);
       const location = getSenderResumeLocation(initialDraft);
       setCurrentStep(location.step);
-      setMemoryScreen(location.memoryScreen ?? "choice");
+      setMemoryScreen(location.memoryScreen === "portrait" ? "portrait" : "choice");
       setScreen("edit");
       initialized.current = true;
       return () => { cancelled = true; };
@@ -832,7 +836,7 @@ export function SenderBuilder({
     setDraft(recoverableDraft);
     setGiftInput(recoverableDraft.gift.externalUrl);
     setCurrentStep(location.step);
-    setMemoryScreen(location.memoryScreen ?? "choice");
+    setMemoryScreen(location.memoryScreen === "portrait" ? "portrait" : "choice");
     setScreen("edit");
     setSaveState("saved");
     initialized.current = true;
@@ -866,10 +870,6 @@ export function SenderBuilder({
     setShowErrors(false);
     setPhotoError("");
     if (currentStep === "memory" && memoryScreen === "portrait") {
-      setMemoryScreen(draft.memoryKind === "scrapbook" ? "scrapbook" : "choice");
-      return;
-    }
-    if (currentStep === "memory" && memoryScreen === "scrapbook") {
       setMemoryScreen("choice");
       setOpenSheet(null);
       setCropDraft(null);
@@ -902,7 +902,7 @@ export function SenderBuilder({
       return;
     }
     setShowErrors(false);
-    if (currentStep === "memory" && memoryScreen !== "portrait") {
+    if (currentStep === "memory" && memoryScreen === "choice") {
       setMemoryScreen("portrait");
       return;
     }
@@ -1119,7 +1119,6 @@ export function SenderBuilder({
           : previous.scrapbook.description,
       },
     }));
-    setMemoryScreen("scrapbook");
   }
 
   function openCropEditor(index: number) {
@@ -1183,7 +1182,13 @@ export function SenderBuilder({
       addPhotoInput.current?.click();
       return;
     }
-    goNext();
+    const errors = validationErrors.memory ?? [];
+    if (errors.length > 0) {
+      setShowErrors(true);
+      return;
+    }
+    setShowErrors(false);
+    setMemoryScreen("portrait");
   }
 
   if (screen === "loading") {
@@ -1261,12 +1266,9 @@ export function SenderBuilder({
     );
   }
 
-  const meta = currentStep === "memory" && memoryScreen === "scrapbook"
-    ? {
-        title: "做一页回忆手帐",
-        intro: "照片会自动填进固定版式；只有主体被切到时，才需要点照片调整。",
-      }
-    : currentStep === "memory" && memoryScreen === "portrait"
+  const isScrapbookEditor = currentStep === "memory" && memoryScreen === "choice" && draft.memoryKind === "scrapbook";
+  const isMemoryComposer = usesMemoryComposerLayout(currentStep, memoryScreen);
+  const meta = currentStep === "memory" && memoryScreen === "portrait"
       ? {
           title: `让 ${draft.basics.recipientName || "TA"} 成为生日主角`,
           intro: "上传一张照片制作最后一页海报，也可以直接跳过。",
@@ -1280,7 +1282,7 @@ export function SenderBuilder({
     : "sofa-box";
 
   return (
-    <main className={styles.shell}>
+    <main className={`${styles.shell} ${isMemoryComposer ? styles.scrapbookEditorShell : ""}`}>
       <header className={styles.header}>
         <button type="button" className={styles.backButton} onClick={goBack}>
           {currentIndex === 0 ? "退出" : "返回"}
@@ -1302,8 +1304,8 @@ export function SenderBuilder({
         </span>
       </header>
 
-      <div className={styles.scrollArea} ref={scrollArea}>
-        <section className={styles.stepIntro}>
+      <div className={`${styles.scrollArea} ${isMemoryComposer ? styles.scrapbookEditorScroll : ""}`} ref={scrollArea}>
+        <section className={`${styles.stepIntro} ${isMemoryComposer ? styles.scrapbookEditorIntro : ""}`}>
           <h1
             ref={stepHeading}
             tabIndex={-1}
@@ -1324,9 +1326,9 @@ export function SenderBuilder({
           </p>
         ) : null}
 
-        {!(currentStep === "memory" && memoryScreen === "scrapbook") ? <ErrorPanel errors={currentErrors} /> : null}
+        {!isScrapbookEditor ? <ErrorPanel errors={currentErrors} /> : null}
 
-        <section className={styles.formSection}>
+        <section className={`${styles.formSection} ${isMemoryComposer ? styles.scrapbookEditorForm : ""}`}>
           {currentStep === "basics" ? (
             <>
               <div className={styles.basicsFields}>
@@ -1481,7 +1483,7 @@ export function SenderBuilder({
             <>
               <fieldset className={styles.fieldset}>
                 <legend>选择一种心意内容</legend>
-                <div className={styles.choiceGrid}>
+                <div className={`${styles.choiceGrid} ${styles.memoryChoiceGrid}`}>
                   <ChoiceCard
                     selected={draft.memoryKind === "card"}
                     title="普通贺卡"
@@ -1546,40 +1548,26 @@ export function SenderBuilder({
             </>
           ) : null}
 
-          {currentStep === "memory" && memoryScreen === "scrapbook" ? (
+          {isScrapbookEditor ? (
             <>
               <section className={styles.layoutSummary} aria-labelledby="layout-summary-title">
                 <span className={styles.templateThumb} aria-hidden="true">
                   <ScrapbookCanvas templateId={selectedScrapbookTemplate.id} />
                 </span>
                 <div>
-                  <span className={styles.sectionKicker}>当前版式</span>
                   <h2 id="layout-summary-title">{selectedScrapbookTemplate.name}</h2>
-                  <p>{selectedScrapbookTemplate.description}</p>
                 </div>
                 <button type="button" className={styles.summaryAction} disabled={photoReading} onClick={() => {
                   setPendingTemplateId(draft.scrapbook.templateId);
                   setOpenSheet("template");
                 }}>
-                  更换版式
+                  更换
                 </button>
               </section>
 
               {photoReading ? <p role="status">正在放入照片，请稍等…</p> : null}
               <section className={styles.previewSection} aria-labelledby="scrapbook-preview-title">
-                <div className={styles.sectionHeading}>
-                  <div>
-                    <span className={styles.sectionKicker}>实时预览</span>
-                    <h2 id="scrapbook-preview-title">点照片调整，点空位添加</h2>
-                  </div>
-                  <span
-                    className={missingScrapbookSlots > 0 ? styles.missingCount : styles.completeCount}
-                    aria-live="polite"
-                  >
-                    {missingScrapbookSlots > 0 ? `还差 ${missingScrapbookSlots} 张` : "照片已放好"}
-                  </span>
-                </div>
-                <p className={styles.privacyHint}>照片会保存在当前浏览器；发布时将上传用于手帐展示。</p>
+                <h2 id="scrapbook-preview-title" className={styles.srOnly}>手帐预览</h2>
 
                 <input ref={addPhotoInput} className={styles.srOnly} tabIndex={-1} aria-hidden="true" type="file" accept="image/jpeg,image/png,image/webp" multiple={missingScrapbookSlots > 1} onChange={addPhotos} />
                 {draft.scrapbook.slots.map((slot, index) => (
@@ -1635,9 +1623,7 @@ export function SenderBuilder({
                     },
                   }))}
                 />
-                <small>
-                  {draft.scrapbook.description.length}/{SCRAPBOOK_DESCRIPTION_MAX_LENGTH}，最多两行
-                </small>
+                <small>{draft.scrapbook.description.length}/{SCRAPBOOK_DESCRIPTION_MAX_LENGTH}</small>
               </label>
               {currentErrors.length > 0 && missingScrapbookSlots === 0 ? <ErrorPanel errors={currentErrors} /> : null}
             </>
@@ -1773,21 +1759,23 @@ export function SenderBuilder({
           className={styles.primaryButton}
           onClick={currentStep === "publish"
             ? publishSurprise
-            : currentStep === "memory" && memoryScreen === "scrapbook"
+            : isScrapbookEditor
               ? completeScrapbook
               : goNext}
-          disabled={publishState === "publishing" || photoReading || portraitBusy}
+          disabled={publishState === "publishing" || photoReading || portraitBusy || (isScrapbookEditor && missingScrapbookSlots > 0)}
         >
           <span className={styles.primaryButtonLabel}>
             {portraitBusy
               ? "正在制作主角海报…"
               : currentStep === "publish"
               ? publishState === "publishing" ? "正在发布…" : "发布惊喜"
-              : currentStep === "memory" && memoryScreen === "scrapbook"
-                ? missingScrapbookSlots > 0 ? `再选 ${missingScrapbookSlots} 张照片` : "完成手帐"
+              : isScrapbookEditor
+                ? "完成并继续"
                 : currentStep === "memory" && memoryScreen === "portrait"
                   ? draft.portrait ? "完成并继续" : "不上传，继续"
-                : "继续"}
+                : currentStep === "memory" && memoryScreen === "choice"
+                  ? "完成并继续"
+                  : "继续"}
           </span>
         </button>
       </footer>

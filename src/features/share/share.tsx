@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import type { GiftContent, PortraitPosterContent } from "@/lib/surprise-contract";
 import { getPublicGiftLink } from "@/lib/gift-link-policy";
+import { ConfettiBurst } from "@/features/shared/confetti-burst";
 import styles from "./share.module.css";
 
 type ShareProps = {
@@ -36,6 +37,7 @@ export function Share({
   const portraitFailed = Boolean(portrait && failedPortraitUrl === portrait.imageUrl);
   return (
     <section className={styles.ending} aria-labelledby="birthday-ending-title">
+      <ConfettiBurst variant="ending" />
       {portrait && !portraitFailed ? (
         <div className={styles.portraitPoster}>
           <Image
