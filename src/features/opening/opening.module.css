@@ -17,7 +17,8 @@
 }
 
 .background {
-  object-fit: fill;
+  object-fit: cover;
+  object-position: center;
   user-select: none;
   -webkit-user-drag: none;
 }
